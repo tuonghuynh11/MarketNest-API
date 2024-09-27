@@ -157,4 +157,23 @@ export default class AuthController {
     }
     next();
   }
+
+  @Get("/oauth/google")
+  public async googleLogin(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { accessToken, refreshToken, user, session } =
+        await AuthRepository.googleLogin(req);
+      const urlRedirect = `${
+        config.google_client_redirect_callback
+      }?accessToken=${accessToken}&session=${JSON.stringify(session)}`;
+      res.cookie("__refreshToken", refreshToken, { httpOnly: true });
+      return res.redirect(urlRedirect);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
