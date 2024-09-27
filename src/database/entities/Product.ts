@@ -36,9 +36,6 @@ export class Product extends AppBaseEntity {
   @Column()
   stock: number;
 
-  @Column()
-  hashPassword: string;
-
   @ManyToOne(() => Shop, (shop) => shop.products)
   @JoinColumn({ name: "shopId", referencedColumnName: "id" })
   shop?: Shop;
