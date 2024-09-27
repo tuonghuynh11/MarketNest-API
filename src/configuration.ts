@@ -66,6 +66,11 @@ class Config implements ConfigValues {
   );
   upload_csv_dir = path.resolve(process.env.UPLOAD_CSV_DIR || "uploads/csvs");
   serverSite = process.env.SERVER_SITE || "http://localhost:4000";
+
+  google_client_id = process.env.GOOGLE_CLIENT_ID || "";
+  google_client_secret = process.env.GOOGLE_CLIENT_SECRET || "";
+  google_redirect_uri = process.env.GOOGLE_REDIRECT_URI || "";
+  google_client_redirect_callback = process.env.CLIENT_REDIRECT_CALLBACK || "";
 }
 
 export default new Config();
