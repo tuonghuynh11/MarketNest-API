@@ -403,6 +403,34 @@ export default class AuthRepository {
       },
     };
   };
+  static changePassword = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { newPassword } = req.body;
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    const userRepository = dataSource.getRepository(User);
+
+    const decode: any = verify(session.accessToken, config.jwtAccessKey);
+
+    const user = await userRepository.findOneBy({
+      id: decode.iss,
+    });
+
+    if (!user) {
+      throw new BadRequestError("User not found");
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new ForbiddenError("User not active");
+    }
+
+    user.hashPassword = getHashPassword(newPassword);
+    await userRepository.save(user);
+  };
   static getMe = async ({ req, res }: { req: Request; res: Response }) => {
     const { dataSource } = req.app.locals;
     const { session } = res.locals;

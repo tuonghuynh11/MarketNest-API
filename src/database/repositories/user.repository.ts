@@ -17,6 +17,7 @@ import {
 } from "../../utils";
 import config from "../../configuration";
 import { sendMail } from "../../utils/email";
+import AppReport from "../entities/AppReport";
 
 export default class UserRepository {
   static getAllUses = async (req: Request) => {
@@ -108,6 +109,36 @@ export default class UserRepository {
     return {
       user: omit(user, ["hashPassword", "resetToken", "activeToken"]),
     };
+  };
+  static sendAppReport = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { title, content, image } = req.body;
+    const { session } = res.locals;
+    const { dataSource } = req.app.locals;
+    const appReportRepository = dataSource.getRepository(AppReport);
+    const userRepository = dataSource.getRepository(User);
+
+    const [admin, sender] = await Promise.all([
+      userRepository.findOneBy({ id: "1474b621-6051-4ef4-b7ba-2e5eacb704fb" }),
+      userRepository.findOneBy({ id: session.userId }),
+    ]);
+
+    const newAppReport = new AppReport();
+    newAppReport.title = title;
+    newAppReport.body = content;
+    newAppReport.sender = sender!;
+    newAppReport.receiver = admin!;
+    newAppReport.image = image;
+    newAppReport.createdBy = session.userId;
+
+    await appReportRepository.save(newAppReport);
+
+    return newAppReport;
   };
   static resendActiveEmail = async ({
     req,

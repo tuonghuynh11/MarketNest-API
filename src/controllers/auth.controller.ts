@@ -140,6 +140,21 @@ export default class AuthController {
       next(error);
     }
   }
+  @Post("/change-password")
+  public async changePassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      await AuthRepository.changePassword({ req, res });
+      res.locals.message = "Change password successfully";
+      res.locals.session = null;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 
   @Get("/me")
   public async getMe(
