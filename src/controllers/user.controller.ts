@@ -41,6 +41,22 @@ export default class UserController {
       next(error);
     }
   }
+  @Post("/send/app-report")
+  @Authorize([SystemRole.User, SystemRole.Shopkeeper])
+  public async sendAppReport(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await UserRepository.sendAppReport({ req, res });
+      res.locals.message = "Send App Report Successfully";
+      res.locals.data = response;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 
   @Get("/resend-active-email")
   @Authorize("*")
