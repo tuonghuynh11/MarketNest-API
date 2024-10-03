@@ -5,6 +5,7 @@ import { Product } from "./Product";
 import ChatRoom from "./ChatRoom";
 import Rating from "./Rating";
 import { ShopStatus } from "../../utils/enums";
+import Discount from "./Discount";
 
 @Entity("shops")
 export class Shop extends AppBaseEntity {
@@ -14,7 +15,9 @@ export class Shop extends AppBaseEntity {
   @Column({ nullable: true })
   description: string;
 
-  // @Column({ nullable: true })
+  @Column({ nullable: true })
+  image: string;
+
   @OneToOne(() => User)
   @JoinColumn()
   owner: User;
@@ -27,6 +30,9 @@ export class Shop extends AppBaseEntity {
 
   @OneToMany(() => Rating, (rating) => rating.shop)
   ratings?: Rating[];
+
+  @OneToMany(() => Discount, (discount) => discount.shop)
+  discounts?: Rating[];
 
   @Column({ type: "enum", enum: ShopStatus, default: ShopStatus.PENDING })
   status: ShopStatus;

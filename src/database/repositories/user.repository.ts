@@ -14,10 +14,15 @@ import {
   getHashPassword,
   getNameFromEmail,
   omit,
+  pick,
 } from "../../utils";
 import config from "../../configuration";
 import { sendMail } from "../../utils/email";
 import AppReport from "../entities/AppReport";
+import Order from "../entities/Order";
+import { OrderStatus } from "../../utils/enums";
+import ProductCategory from "../entities/ProductCategory";
+import ProductImage from "../entities/ProductImage";
 
 export default class UserRepository {
   static getAllUses = async (req: Request) => {
@@ -139,6 +144,104 @@ export default class UserRepository {
     await appReportRepository.save(newAppReport);
 
     return newAppReport;
+  };
+  static getMyOrder = async ({ req, res }: { req: Request; res: Response }) => {
+    const {
+      pageSize,
+      pageIndex,
+      status,
+      searchName,
+      sortBy = "updatedAt",
+      orderBy = "DESC",
+    } = req.query;
+    const { session } = res.locals;
+    const { dataSource } = req.app.locals;
+    const orderRepository = dataSource.getRepository(Order);
+
+    const query = orderRepository
+      .createQueryBuilder("order")
+      .where("order.user.id = :userId", { userId: session.userId })
+      .innerJoinAndSelect("order.orderDetails", "orderDetails")
+      .leftJoinAndSelect("order.discount", "discount")
+      .leftJoinAndSelect("order.shippingMethod", "shippingMethod")
+      .leftJoinAndSelect("order.paymentMethod", "paymentMethod")
+      .leftJoinAndSelect("orderDetails.product", "product")
+      .leftJoinAndSelect("product.images", "images")
+      .leftJoinAndSelect("product.shop", "shop")
+      .leftJoinAndSelect("product.categories", "categories");
+
+    if (searchName) {
+      query.andWhere("product.name ILIKE :searchName", {
+        searchName: `%${searchName}%`,
+      });
+    }
+
+    if (status) {
+      query.andWhere("order.orderStatus = :status", {
+        status: OrderStatus[status as keyof typeof OrderStatus],
+      });
+    }
+
+    query.orderBy("order.updatedAt", orderBy === "ASC" ? "ASC" : "DESC");
+
+    if (pageSize && pageIndex) {
+      query
+        .skip(Number(pageSize) * (Number(pageIndex) - 1))
+        .take(Number(pageSize));
+    }
+
+    const [orders, count] = await query.getManyAndCount();
+    console.log("Orders: ", orders);
+    const formatData = orders.map((order: Order) => {
+      return {
+        ...pick(order, [
+          "id",
+          "createdAt",
+          "shippingFee",
+          "totalAmount",
+          "orderStatus",
+          "refundStatus",
+        ]),
+        orderDetails: order.orderDetails.map((orderDetail: any) => {
+          return {
+            ...pick(orderDetail, ["id", "quantity", "price", "totalAmount"]),
+            product: {
+              ...pick(orderDetail.product, [
+                "id",
+                "name",
+                "price",
+                "description",
+                "stock",
+              ]),
+              images: orderDetail.product.images.map(
+                (image: ProductImage) => image.imageUrl
+              ),
+              shop: {
+                ...pick(orderDetail.product.shop, [
+                  "id",
+                  "name",
+                  "description",
+                  "image",
+                  "status",
+                ]),
+              },
+              categories: orderDetail.product.categories.map(
+                (category: ProductCategory) => ({
+                  ...pick(category, ["id", "name", "description", "image"]),
+                })
+              ),
+            },
+          };
+        }),
+      };
+    });
+
+    return {
+      orders: formatData,
+      count,
+      pageIndex: pageIndex ? Number(pageIndex) : 1,
+      pageSize: pageSize ? Number(pageSize) : count,
+    };
   };
   static resendActiveEmail = async ({
     req,

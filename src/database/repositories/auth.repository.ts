@@ -258,6 +258,7 @@ export default class AuthRepository {
       const newUser: User = userRepository.create({
         email: googleUser.email,
         username: googleUser.name,
+        displayName: googleUser.name,
         avatar: googleUser.picture,
         hashPassword: getHashPassword(googleUser.email),
         activeToken: "",
