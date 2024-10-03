@@ -9,6 +9,27 @@ import UserRepository from "../database/repositories/user.repository";
 @Controller("/users")
 @Authenticate()
 export default class UserController {
+  @Get("/orders")
+  @Authorize([SystemRole.User])
+  public async getMyOrders(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await UserRepository.getMyOrder({ req, res });
+      res.locals.data = {
+        orders: response.orders,
+        count: response.count,
+        pageIndex: response.pageIndex,
+        pageSize: response.pageSize,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
   @Get("/")
   @Authorize([SystemRole.Admin])
   public async index(
