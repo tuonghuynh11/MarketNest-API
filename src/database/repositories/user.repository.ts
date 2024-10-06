@@ -23,6 +23,7 @@ import Order from "../entities/Order";
 import { OrderStatus } from "../../utils/enums";
 import ProductCategory from "../entities/ProductCategory";
 import ProductImage from "../entities/ProductImage";
+import OrderDetail from "../entities/OrderDetail";
 
 export default class UserRepository {
   static getAllUses = async (req: Request) => {
@@ -392,5 +393,90 @@ export default class UserRepository {
     }
 
     await userRepository.remove(user);
+  };
+  static getOrderById = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { id } = req.params;
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    const orderRepository = dataSource.getRepository(Order);
+
+    const order: Order | null = await orderRepository.findOne({
+      relations: [
+        "paymentMethod",
+        "shippingMethod",
+        "address",
+        "discount",
+        "orderDetails",
+        "orderDetails.product",
+        "orderDetails.product.shop",
+        "orderDetails.product.images",
+        "orderDetails.product.categories",
+      ],
+      where: {
+        id,
+        user: {
+          id: session.userId,
+        },
+      },
+    });
+    if (!order) {
+      throw new NotAcceptableError("Order not found");
+    }
+    const formatData = {
+      ...omit(order, [
+        "paymentMethod",
+        "shippingMethod",
+        "discount",
+        "orderDetails",
+      ]),
+      paymentMethod: order.paymentMethod?.name,
+      shippingMethod: {
+        name: order.shippingMethod?.name,
+        type: order.shippingMethod?.type,
+      },
+      discount: {
+        id: order.discount?.id,
+        description: order.discount?.description,
+        discountPercentage: order.discount?.discountPercentage,
+      },
+      orderDetails: order.orderDetails.map((orderDetail: OrderDetail) => ({
+        ...omit(orderDetail, ["product"]),
+        product: {
+          ...omit(orderDetail.product, [
+            "shop",
+            "images",
+            "categories",
+            "createdBy",
+            "createdAt",
+            "updatedAt",
+            "updatedBy",
+            "deletedAt",
+            "deletedBy",
+          ]),
+          shop: {
+            id: orderDetail?.product?.shop?.id,
+            name: orderDetail?.product?.shop?.name,
+            description: orderDetail?.product?.shop?.description,
+            image: orderDetail?.product?.shop?.image,
+            status: orderDetail?.product?.shop?.status,
+          },
+          images: orderDetail.product?.images.map((image) => image.imageUrl),
+          categories: orderDetail.product.categories.map((category) => ({
+            id: category.id,
+            name: category.name,
+            image: category.image,
+            description: category.description,
+          })),
+        },
+      })),
+    };
+
+    return formatData;
   };
 }

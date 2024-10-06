@@ -9,6 +9,24 @@ import UserRepository from "../database/repositories/user.repository";
 @Controller("/users")
 @Authenticate()
 export default class UserController {
+  @Get("/orders/:id")
+  @Authorize([SystemRole.User])
+  public async getOrderById(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await UserRepository.getOrderById({ req, res });
+      res.locals.data = {
+        ...response,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
   @Get("/orders")
   @Authorize([SystemRole.User])
   public async getMyOrders(
