@@ -140,7 +140,6 @@ class Application {
                   throw new UnauthorizedError();
                 }
                 const { role } = res.locals?.session;
-
                 if (Array.isArray(allowedRoles) && role) {
                   let isMatchRolePermission = allowedRoles.find(
                     (allowedRole: SystemRole) => allowedRole === role

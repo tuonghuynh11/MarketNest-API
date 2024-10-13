@@ -63,6 +63,22 @@ export default class AuthController {
       next(error);
     }
   }
+  @Post("/login-google")
+  public async loginByGoogleFrontend(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await AuthRepository.loginByGoogle(req);
+      res.cookie("__refreshToken", response.refreshToken, { httpOnly: true });
+      res.locals.data = { user: response.user };
+      res.locals.session = response.session;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 
   @Post("/refresh")
   public async refresh(
@@ -140,6 +156,21 @@ export default class AuthController {
       next(error);
     }
   }
+  @Post("/change-password")
+  public async changePassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      await AuthRepository.changePassword({ req, res });
+      res.locals.message = "Change password successfully";
+      res.locals.session = null;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 
   @Get("/me")
   public async getMe(
@@ -157,4 +188,23 @@ export default class AuthController {
     }
     next();
   }
+
+  // @Get("/oauth/google")
+  // public async googleLogin(
+  //   req: Request,
+  //   res: Response,
+  //   next: NextFunction
+  // ): Promise<void> {
+  //   try {
+  //     const { accessToken, refreshToken, user, session } =
+  //       await AuthRepository.googleLogin(req);
+  //     const urlRedirect = `${
+  //       config.google_client_redirect_callback
+  //     }?accessToken=${accessToken}&session=${JSON.stringify(session)}`;
+  //     res.cookie("__refreshToken", refreshToken, { httpOnly: true });
+  //     return res.redirect(urlRedirect);
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
 }
