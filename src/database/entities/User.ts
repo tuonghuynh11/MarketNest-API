@@ -18,6 +18,7 @@ import Rating from "./Rating";
 import Address from "./Address";
 import PaymentInformation from "./PaymentInformation";
 import Order from "./Order";
+import AppReport from "./AppReport";
 
 export enum UserStatus {
   PENDING = "PENDING",
@@ -90,4 +91,10 @@ export class User extends AppBaseEntity {
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  @OneToMany(() => AppReport, (appReport) => appReport.sender)
+  appReportsSender: AppReport[];
+
+  @OneToMany(() => AppReport, (appReport) => appReport.receiver)
+  appReportsReceiver: AppReport[];
 }

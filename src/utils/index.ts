@@ -2,6 +2,7 @@ import { sign } from "jsonwebtoken";
 import config from "../configuration";
 import { hashSync } from "bcryptjs";
 import { generate } from "generate-password";
+import axios from "axios";
 
 export const getAccessToken = (userId: string) => {
   return sign({ iss: userId }, config.jwtAccessKey, { expiresIn: "1d" });
@@ -69,4 +70,60 @@ export const pick = <T extends object, K extends keyof T>(
   }
 
   return result as Pick<T, K>;
+};
+
+// Google Auth
+
+/**
+ * Hàm này thực hiện gửi yêu cầu lấy Google OAuth token dựa trên authorization code nhận được từ client-side.
+ * @param {string} code - Authorization code được gửi từ client-side.
+ * @returns {Object} - Đối tượng chứa Google OAuth token.
+ */
+export const getOauthGooleToken = async (code: string): Promise<any> => {
+  const body = {
+    code,
+    client_id: config.google_client_id,
+    client_secret: config.google_client_secret,
+    redirect_uri: config.google_redirect_uri,
+    grant_type: "authorization_code",
+  };
+  const { data } = await axios.post(
+    "https://oauth2.googleapis.com/token",
+    body,
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
+  );
+  return data;
+};
+
+/**
+ * Hàm này thực hiện gửi yêu cầu lấy thông tin người dùng từ Google dựa trên Google OAuth token.
+ * @param {Object} tokens - Đối tượng chứa Google OAuth token.
+ * @param {string} tokens.id_token - ID token được lấy từ Google OAuth.
+ * @param {string} tokens.access_token - Access token được lấy từ Google OAuth.
+ * @returns {Object} - Đối tượng chứa thông tin người dùng từ Google.
+ */
+export const getGoogleUser = async ({
+  id_token,
+  access_token,
+}: {
+  id_token: string;
+  access_token: string;
+}): Promise<any> => {
+  const { data } = await axios.get(
+    "https://www.googleapis.com/oauth2/v1/userinfo",
+    {
+      params: {
+        access_token,
+        alt: "json",
+      },
+      headers: {
+        Authorization: `Bearer ${id_token}`,
+      },
+    }
+  );
+  return data;
 };

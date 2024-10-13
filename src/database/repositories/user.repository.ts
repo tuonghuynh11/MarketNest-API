@@ -14,9 +14,16 @@ import {
   getHashPassword,
   getNameFromEmail,
   omit,
+  pick,
 } from "../../utils";
 import config from "../../configuration";
 import { sendMail } from "../../utils/email";
+import AppReport from "../entities/AppReport";
+import Order from "../entities/Order";
+import { OrderStatus } from "../../utils/enums";
+import ProductCategory from "../entities/ProductCategory";
+import ProductImage from "../entities/ProductImage";
+import OrderDetail from "../entities/OrderDetail";
 
 export default class UserRepository {
   static getAllUses = async (req: Request) => {
@@ -25,7 +32,6 @@ export default class UserRepository {
     const { pageSize = 100, pageIndex = 1, status, searchName } = req.query;
 
     const userRepository = dataSource.getRepository(User);
-
     const users = await userRepository.find({
       skip: Number(pageSize) * (Number(pageIndex) - 1),
       take: Number(pageSize),
@@ -108,6 +114,134 @@ export default class UserRepository {
 
     return {
       user: omit(user, ["hashPassword", "resetToken", "activeToken"]),
+    };
+  };
+  static sendAppReport = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { title, content, image } = req.body;
+    const { session } = res.locals;
+    const { dataSource } = req.app.locals;
+    const appReportRepository = dataSource.getRepository(AppReport);
+    const userRepository = dataSource.getRepository(User);
+
+    const [admin, sender] = await Promise.all([
+      userRepository.findOneBy({ id: "1474b621-6051-4ef4-b7ba-2e5eacb704fb" }),
+      userRepository.findOneBy({ id: session.userId }),
+    ]);
+
+    const newAppReport = new AppReport();
+    newAppReport.title = title;
+    newAppReport.body = content;
+    newAppReport.sender = sender!;
+    newAppReport.receiver = admin!;
+    newAppReport.image = image;
+    newAppReport.createdBy = session.userId;
+
+    await appReportRepository.save(newAppReport);
+
+    return newAppReport;
+  };
+  static getMyOrder = async ({ req, res }: { req: Request; res: Response }) => {
+    const {
+      pageSize,
+      pageIndex,
+      status,
+      searchName,
+      sortBy = "updatedAt",
+      orderBy = "DESC",
+    } = req.query;
+    const { session } = res.locals;
+    const { dataSource } = req.app.locals;
+    const orderRepository = dataSource.getRepository(Order);
+
+    const query = orderRepository
+      .createQueryBuilder("order")
+      .where("order.user.id = :userId", { userId: session.userId })
+      .innerJoinAndSelect("order.orderDetails", "orderDetails")
+      .leftJoinAndSelect("order.discount", "discount")
+      .leftJoinAndSelect("order.shippingMethod", "shippingMethod")
+      .leftJoinAndSelect("order.paymentMethod", "paymentMethod")
+      .leftJoinAndSelect("orderDetails.product", "product")
+      .leftJoinAndSelect("product.images", "images")
+      .leftJoinAndSelect("product.shop", "shop")
+      .leftJoinAndSelect("product.categories", "categories");
+
+    if (searchName) {
+      query.andWhere("product.name ILIKE :searchName", {
+        searchName: `%${searchName}%`,
+      });
+    }
+
+    if (status) {
+      query.andWhere("order.orderStatus = :status", {
+        status: OrderStatus[status as keyof typeof OrderStatus],
+      });
+    }
+
+    query.orderBy("order.updatedAt", orderBy === "ASC" ? "ASC" : "DESC");
+
+    if (pageSize && pageIndex) {
+      query
+        .skip(Number(pageSize) * (Number(pageIndex) - 1))
+        .take(Number(pageSize));
+    }
+
+    const [orders, count] = await query.getManyAndCount();
+    console.log("Orders: ", orders);
+    const formatData = orders.map((order: Order) => {
+      return {
+        ...pick(order, [
+          "id",
+          "createdAt",
+          "shippingFee",
+          "totalAmount",
+          "orderStatus",
+          "refundStatus",
+        ]),
+        orderDetails: order.orderDetails.map((orderDetail: any) => {
+          return {
+            ...pick(orderDetail, ["id", "quantity", "price", "totalAmount"]),
+            product: {
+              ...pick(orderDetail.product, [
+                "id",
+                "name",
+                "price",
+                "description",
+                "stock",
+              ]),
+              images: orderDetail.product.images.map(
+                (image: ProductImage) => image.imageUrl
+              ),
+              shop: {
+                ...pick(orderDetail.product.shop, [
+                  "id",
+                  "name",
+                  "description",
+                  "image",
+                  "status",
+                ]),
+              },
+              categories: orderDetail.product.categories.map(
+                (category: ProductCategory) => ({
+                  ...pick(category, ["id", "name", "description", "image"]),
+                })
+              ),
+            },
+          };
+        }),
+      };
+    });
+
+    return {
+      orders: formatData,
+      count,
+      pageIndex: pageIndex ? Number(pageIndex) : 1,
+      pageSize: pageSize ? Number(pageSize) : count,
     };
   };
   static resendActiveEmail = async ({
@@ -259,5 +393,90 @@ export default class UserRepository {
     }
 
     await userRepository.remove(user);
+  };
+  static getOrderById = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { id } = req.params;
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    const orderRepository = dataSource.getRepository(Order);
+
+    const order: Order | null = await orderRepository.findOne({
+      relations: [
+        "paymentMethod",
+        "shippingMethod",
+        "address",
+        "discount",
+        "orderDetails",
+        "orderDetails.product",
+        "orderDetails.product.shop",
+        "orderDetails.product.images",
+        "orderDetails.product.categories",
+      ],
+      where: {
+        id,
+        user: {
+          id: session.userId,
+        },
+      },
+    });
+    if (!order) {
+      throw new NotAcceptableError("Order not found");
+    }
+    const formatData = {
+      ...omit(order, [
+        "paymentMethod",
+        "shippingMethod",
+        "discount",
+        "orderDetails",
+      ]),
+      paymentMethod: order.paymentMethod?.name,
+      shippingMethod: {
+        name: order.shippingMethod?.name,
+        type: order.shippingMethod?.type,
+      },
+      discount: {
+        id: order.discount?.id,
+        description: order.discount?.description,
+        discountPercentage: order.discount?.discountPercentage,
+      },
+      orderDetails: order.orderDetails.map((orderDetail: OrderDetail) => ({
+        ...omit(orderDetail, ["product"]),
+        product: {
+          ...omit(orderDetail.product, [
+            "shop",
+            "images",
+            "categories",
+            "createdBy",
+            "createdAt",
+            "updatedAt",
+            "updatedBy",
+            "deletedAt",
+            "deletedBy",
+          ]),
+          shop: {
+            id: orderDetail?.product?.shop?.id,
+            name: orderDetail?.product?.shop?.name,
+            description: orderDetail?.product?.shop?.description,
+            image: orderDetail?.product?.shop?.image,
+            status: orderDetail?.product?.shop?.status,
+          },
+          images: orderDetail.product?.images.map((image) => image.imageUrl),
+          categories: orderDetail.product.categories.map((category) => ({
+            id: category.id,
+            name: category.name,
+            image: category.image,
+            description: category.description,
+          })),
+        },
+      })),
+    };
+
+    return formatData;
   };
 }
