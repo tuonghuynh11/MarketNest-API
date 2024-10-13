@@ -7,6 +7,7 @@ import Address from "./Address";
 import Discount from "./Discount";
 import { OrderStatus, RefundStatus } from "../../utils/enums";
 import OrderDetail from "./OrderDetail";
+import { Shop } from "./Shop";
 
 @Entity("orders")
 export default class Order extends AppBaseEntity {
@@ -25,6 +26,10 @@ export default class Order extends AppBaseEntity {
   @ManyToOne(() => Address, (address) => address.orders)
   @JoinColumn({ name: "addressId", referencedColumnName: "id" })
   address: Address;
+
+  @ManyToOne(() => Shop, (shop) => shop.orders)
+  @JoinColumn({ name: "shopId", referencedColumnName: "id" })
+  shop: Shop;
 
   @Column()
   shippingFee: number;
