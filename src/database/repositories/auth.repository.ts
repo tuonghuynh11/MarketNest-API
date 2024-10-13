@@ -6,10 +6,8 @@ import { Session } from "../entities/Session";
 import {
   generateUniqueString,
   getAccessToken,
-  getGoogleUser,
   getHashPassword,
   getNameFromEmail,
-  getOauthGooleToken,
   getRefreshToken,
   omit,
   validateEmail,
@@ -229,38 +227,28 @@ export default class AuthRepository {
       },
     };
   };
-  static googleLogin = async (req: Request) => {
+  static loginByGoogle = async (req: Request) => {
     const { dataSource } = req.app.locals;
     const userRepository = dataSource.getRepository(User);
     const roleRepository = dataSource.getRepository(Role);
     const sessionRepository = dataSource.getRepository(Session);
 
-    const { code } = req.query;
-    const data: any = await getOauthGooleToken(code as string); // Gửi authorization code để lấy Google OAuth token
-
-    const { id_token, access_token } = data; // Lấy ID token và access token từ kết quả trả về
-    const googleUser = await getGoogleUser({ id_token, access_token }); // Gửi Google OAuth token để lấy thông tin người dùng từ Google
-
-    // Kiểm tra email đã được xác minh từ Google
-    if (!googleUser.verified_email) {
-      throw new ForbiddenError("Google email not verified");
-    }
-
+    const { profile } = req.body;
     // Check email exist in database
 
     const user = await userRepository.findOneBy({
-      email: googleUser.email,
+      email: profile.email,
     });
     if (!user) {
       const userRole: Role | null = await roleRepository.findOneBy({
         name: "User",
       });
       const newUser: User = userRepository.create({
-        email: googleUser.email,
-        username: googleUser.name,
-        displayName: googleUser.name,
-        avatar: googleUser.picture,
-        hashPassword: getHashPassword(googleUser.email),
+        email: profile.email,
+        username: profile.name,
+        displayName: profile.name,
+        avatar: profile.picture,
+        hashPassword: getHashPassword(profile.email),
         activeToken: "",
         createdBy: "",
         role: userRole!,
@@ -322,6 +310,100 @@ export default class AuthRepository {
       };
     }
   };
+
+  // static googleLogin = async (req: Request) => {
+  //   const { dataSource } = req.app.locals;
+  //   const userRepository = dataSource.getRepository(User);
+  //   const roleRepository = dataSource.getRepository(Role);
+  //   const sessionRepository = dataSource.getRepository(Session);
+
+  //   const { code } = req.query;
+  //   const data: any = await getOauthGooleToken(code as string); // Gửi authorization code để lấy Google OAuth token
+
+  //   const { id_token, access_token } = data; // Lấy ID token và access token từ kết quả trả về
+  //   const googleUser = await getGoogleUser({ id_token, access_token }); // Gửi Google OAuth token để lấy thông tin người dùng từ Google
+
+  //   // Kiểm tra email đã được xác minh từ Google
+  //   if (!googleUser.verified_email) {
+  //     throw new ForbiddenError("Google email not verified");
+  //   }
+
+  //   // Check email exist in database
+
+  //   const user = await userRepository.findOneBy({
+  //     email: googleUser.email,
+  //   });
+  //   if (!user) {
+  //     const userRole: Role | null = await roleRepository.findOneBy({
+  //       name: "User",
+  //     });
+  //     const newUser: User = userRepository.create({
+  //       email: googleUser.email,
+  //       username: googleUser.name,
+  //       displayName: googleUser.name,
+  //       avatar: googleUser.picture,
+  //       hashPassword: getHashPassword(googleUser.email),
+  //       activeToken: "",
+  //       createdBy: "",
+  //       role: userRole!,
+  //       status: UserStatus.ACTIVE,
+  //     });
+  //     await userRepository.save(newUser);
+  //     const accessToken = getAccessToken(newUser.id);
+  //     const refreshToken = getRefreshToken(newUser.id);
+  //     const session = sessionRepository.create({
+  //       user: newUser,
+  //       email: newUser.email,
+  //       accessToken,
+  //       refreshToken,
+  //       userAgent: req.get("User-Agent"),
+  //     } as Session);
+
+  //     await sessionRepository.save(session);
+
+  //     const rolePermission = await AuthRepository.getRoleByUser({
+  //       dataSource,
+  //       userId: newUser.id,
+  //     });
+  //     return {
+  //       accessToken,
+  //       refreshToken,
+  //       user: omit(newUser, ["hashPassword", "resetToken", "activeToken"]),
+  //       session: {
+  //         userId: newUser.id,
+  //         ...rolePermission,
+  //         accessToken: session.accessToken,
+  //       },
+  //     };
+  //   } else {
+  //     const accessToken = getAccessToken(user.id);
+  //     const refreshToken = getRefreshToken(user.id);
+  //     const session = sessionRepository.create({
+  //       user,
+  //       email: user.email,
+  //       accessToken,
+  //       refreshToken,
+  //       userAgent: req.get("User-Agent"),
+  //     } as Session);
+
+  //     await sessionRepository.save(session);
+
+  //     const rolePermission = await AuthRepository.getRoleByUser({
+  //       dataSource,
+  //       userId: user.id,
+  //     });
+  //     return {
+  //       accessToken,
+  //       refreshToken,
+  //       user: omit(user, ["hashPassword", "resetToken", "activeToken"]),
+  //       session: {
+  //         userId: user.id,
+  //         ...rolePermission,
+  //         accessToken: session.accessToken,
+  //       },
+  //     };
+  //   }
+  // };
   static refresh = async (req: Request) => {
     const { __refreshToken: refToken } = req.cookies;
     const { dataSource } = req.app.locals;
