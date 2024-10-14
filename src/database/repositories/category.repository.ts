@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Product } from "../entities/Product";
-import { Like } from "typeorm";
+import { ILike, Like } from "typeorm";
 import {
   ForbiddenError,
   NotFoundError,
@@ -19,13 +19,13 @@ export default class ProductCategoryRepository {
       skip: Number(pageSize) * (Number(pageIndex) - 1),
       take: Number(pageSize),
       where: {
-        name: searchName ? Like(`%${searchName}%`) : undefined,
+        name: searchName ? ILike(`%${searchName}%`) : undefined,
       },
     });
 
     const count = await productCategoryRepository.count({
       where: {
-        name: searchName ? Like(`%${searchName}%`) : undefined,
+        name: searchName ? ILike(`%${searchName}%`) : undefined,
       },
     });
 
@@ -128,7 +128,6 @@ export default class ProductCategoryRepository {
 
     const productCategory = await productCategoryRepository.findOne({
       where: { id },
-      relations: ["products"],
     });
 
     if (!productCategory) {
