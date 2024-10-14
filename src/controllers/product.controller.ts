@@ -7,7 +7,6 @@ import { SystemRole } from "../utils/enums";
 import ProductRepository from "../database/repositories/product.repository";
 
 @Controller("/products")
-@Authenticate()
 export default class ProductController {
   @Get("/")
   public async index(
