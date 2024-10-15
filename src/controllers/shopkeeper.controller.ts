@@ -28,4 +28,23 @@ export default class ShopkeeperController {
       next(error);
     }
   }
+  @Get("/products")
+  @Authorize([SystemRole.Shopkeeper])
+  public async getProducts(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await ShopkeeperRepository.getProducts({
+        req,
+        res,
+      });
+      res.locals.data = response;
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 }
