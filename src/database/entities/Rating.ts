@@ -17,7 +17,7 @@ export default class Rating extends AppBaseEntity {
   @JoinColumn({ name: "shopId", referencedColumnName: "id" })
   shop: Shop;
 
-  @Column()
+  @Column({ type: "float" })
   value: number;
 
   @Column({ nullable: true })
