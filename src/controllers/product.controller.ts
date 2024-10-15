@@ -6,24 +6,9 @@ import { Delete, Get, Post, Put } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
 import ProductRepository from "../database/repositories/product.repository";
 
+Authenticate();
 @Controller("/products")
 export default class ProductController {
-  @Get("/")
-  public async index(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const response = await ProductRepository.getAllProducts(req);
-      res.locals.data = response;
-
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-
   @Post("/")
   @Authorize([SystemRole.Shopkeeper])
   public async add(
@@ -67,7 +52,7 @@ export default class ProductController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const response = await ProductRepository.update({req, res});
+      const response = await ProductRepository.update({ req, res });
       res.locals.data = {
         product: response.product,
       };
@@ -78,7 +63,7 @@ export default class ProductController {
     }
     next();
   }
-/////Is it ok to delete products cause it can link to many others table, how to handle all the cases?
+  /////Is it ok to delete products cause it can link to many others table, how to handle all the cases?
   @Delete("/:id")
   @Authorize([SystemRole.Shopkeeper])
   public async softDelete(
@@ -102,7 +87,7 @@ export default class ProductController {
     next: NextFunction
   ): Promise<void> {
     try {
-      await ProductRepository.hardDelete(req,res);
+      await ProductRepository.hardDelete(req, res);
       res.locals.message = "Product successfully deleted permanently";
       next();
     } catch (error) {

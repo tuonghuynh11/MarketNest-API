@@ -4,6 +4,7 @@ import CategoryController from "../controllers/category.controller";
 import MediaController from "../controllers/media.controller";
 import OrderController from "../controllers/order.controller";
 import ProductController from "../controllers/product.controller";
+import PublicController from "../controllers/public.controller";
 import RoleController from "../controllers/role.controller";
 import ShopkeeperController from "../controllers/shopkeeper.controller";
 import UserController from "../controllers/user.controller";
@@ -22,7 +23,8 @@ export const appRouters = [
       CartController,
       CategoryController,
       ProductController,
-      WishListController
+      WishListController,
+      PublicController,
     ],
   },
 ];

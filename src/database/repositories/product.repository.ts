@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
 import { Product } from "../entities/Product";
-import { ILike, Like } from "typeorm";
-import {
-  ForbiddenError,
-  NotFoundError,
-} from "../../utils/errors";
+import { ILike } from "typeorm";
+import { ForbiddenError, NotFoundError } from "../../utils/errors";
 import { Shop } from "../entities/Shop";
 import ProductCategory from "../entities/ProductCategory";
 import ProductImage from "../entities/ProductImage";
@@ -18,28 +15,38 @@ export default class ProductRepository {
 
     const productRepository = dataSource.getRepository(Product);
 
-    const products = await productRepository.find({
-      skip: Number(pageSize) * (Number(pageIndex) - 1),
-      take: Number(pageSize),
+    const [products, count] = await productRepository.findAndCount({
+      skip:
+        pageSize && pageIndex
+          ? Number(pageSize) * (Number(pageIndex) - 1)
+          : undefined,
+      take: pageSize && pageIndex ? Number(pageSize) : undefined,
       where: {
         name: searchName ? ILike(`%${searchName}%`) : undefined,
       },
-    });
-
-    const count = await productRepository.count({
-      where: {
-        name: searchName ? ILike(`%${searchName}%`) : undefined,
+      select: {
+        categories: {
+          id: true,
+          name: true,
+          image: true,
+          description: true,
+        },
+        images: {
+          imageUrl: true,
+        },
       },
     });
 
     return {
-      pageSize: Number(pageSize),
-      pageIndex: Number(pageIndex),
+      pageSize: pageIndex && pageSize ? Number(pageSize) : undefined,
+      pageIndex: pageIndex && pageSize ? Number(pageIndex) : undefined,
       count,
-      totalPages: Math.ceil(count / Number(pageSize)),
+      totalPages: pageSize ? Math.ceil(count / Number(pageSize)) : 1,
       products: products.map((product: Product) => {
-        const { ...restProduct } = product;
-        return restProduct;
+        return {
+          ...omit(product, ["images"]),
+          images: product.images.map((image) => image.imageUrl),
+        };
       }),
     };
   };
@@ -58,20 +65,13 @@ export default class ProductRepository {
       throw new NotFoundError("Product is not found.");
     }
     return {
-      product
+      product,
     };
   };
 
   static add = async ({ req, res }: { req: Request; res: Response }) => {
-    const {
-      name,
-      description,
-      price,
-      stock,
-      shopId,
-      categoryIds, 
-      imageUrls,
-    } = req.body;
+    const { name, description, price, stock, shopId, categoryIds, imageUrls } =
+      req.body;
 
     const { dataSource } = req.app.locals;
     const { session } = res.locals;
@@ -123,15 +123,8 @@ export default class ProductRepository {
 
   static update = async ({ req, res }: { req: Request; res: Response }) => {
     const { id } = req.params;
-    const {
-      name,
-      description,
-      price,
-      stock,
-      shopId,
-      categoryIds,
-      imageUrls,
-    } = req.body;
+    const { name, description, price, stock, shopId, categoryIds, imageUrls } =
+      req.body;
 
     const { dataSource } = req.app.locals;
     const productRepository = dataSource.getRepository(Product);
@@ -153,7 +146,7 @@ export default class ProductRepository {
       if (!shop) {
         throw new NotFoundError("Shop not found.");
       }
-      product.shop = shop; 
+      product.shop = shop;
     }
 
     product.name = name ?? product.name;
@@ -175,21 +168,25 @@ export default class ProductRepository {
       if (imageUrls.length === 0) {
         await imageRepository.delete({ product: { id } });
       } else {
-        const existingImages = await imageRepository.find({ where: { product: { id } } });
+        const existingImages = await imageRepository.find({
+          where: { product: { id } },
+        });
         const newImages = imageUrls.map((imageUrl: string) => {
-          const image = existingImages.find((img: ProductImage) => img.imageUrl === imageUrl);
+          const image = existingImages.find(
+            (img: ProductImage) => img.imageUrl === imageUrl
+          );
           if (image) return image;
           return imageRepository.create({ imageUrl, product });
         });
 
-        await imageRepository.save(newImages); 
+        await imageRepository.save(newImages);
       }
     }
 
     return {
       product: {
         ...product,
-        categories: product.categories, 
+        categories: product.categories,
       },
     };
   };
