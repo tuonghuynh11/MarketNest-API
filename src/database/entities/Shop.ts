@@ -40,4 +40,16 @@ export class Shop extends AppBaseEntity {
 
   @Column({ type: "enum", enum: ShopStatus, default: ShopStatus.PENDING })
   status: ShopStatus;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  state: string;
+
+  @Column({ nullable: true })
+  country: string;
+
+  @Column({ nullable: true })
+  address: string;
 }

@@ -36,6 +36,9 @@ export class Product extends AppBaseEntity {
   @Column()
   stock: number;
 
+  @Column({ default: 0, type: "float" })
+  rate: number;
+
   @ManyToOne(() => Shop, (shop) => shop.products)
   @JoinColumn({ name: "shopId", referencedColumnName: "id" })
   shop?: Shop;

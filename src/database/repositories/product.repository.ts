@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import { Product } from "../entities/Product";
-import { ILike } from "typeorm";
+import {
+  FindManyOptions,
+  ILike,
+  In,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+} from "typeorm";
 import { ForbiddenError, NotFoundError } from "../../utils/errors";
 import { Shop } from "../entities/Shop";
 import ProductCategory from "../entities/ProductCategory";
@@ -11,19 +17,28 @@ export default class ProductRepository {
   static getAllProducts = async (req: Request) => {
     const { dataSource } = req.app.locals;
 
-    const { pageSize = 100, pageIndex = 1, searchName } = req.query;
+    const {
+      pageSize,
+      pageIndex,
+      searchName,
+      facet,
+      sortBy,
+      orderBy,
+      minPrice,
+      maxPrice,
+      rating,
+      place,
+    } = req.query;
 
     const productRepository = dataSource.getRepository(Product);
 
-    const [products, count] = await productRepository.findAndCount({
+    let criteria: FindManyOptions<Product> = {
+      relations: ["shop", "categories", "images"],
       skip:
         pageSize && pageIndex
           ? Number(pageSize) * (Number(pageIndex) - 1)
           : undefined,
       take: pageSize && pageIndex ? Number(pageSize) : undefined,
-      where: {
-        name: searchName ? ILike(`%${searchName}%`) : undefined,
-      },
       select: {
         categories: {
           id: true,
@@ -35,11 +50,109 @@ export default class ProductRepository {
           imageUrl: true,
         },
       },
-    });
+    };
+
+    if (sortBy) {
+      criteria = {
+        ...criteria,
+        order: {
+          [sortBy as string]: orderBy,
+        },
+      };
+    }
+
+    if (searchName) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          name: ILike(`%${searchName}%`),
+        },
+      };
+    }
+
+    if (facet) {
+      const categoryIds = (facet as string).split(" ");
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          categories: {
+            id: In(categoryIds as string[]),
+          },
+        },
+      };
+    }
+
+    if (rating) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          rate: Number(rating),
+        },
+      };
+    }
+    if (place) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          shop: {
+            city: place.toString(),
+          },
+        },
+      };
+    }
+
+    if (minPrice && maxPrice) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          price:
+            MoreThanOrEqual(Number(minPrice)) &&
+            LessThanOrEqual(Number(maxPrice)),
+        },
+      };
+    } else if (minPrice && !maxPrice) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          price: MoreThanOrEqual(Number(minPrice)),
+        },
+      };
+    } else if (!minPrice && maxPrice) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          price: LessThanOrEqual(Number(maxPrice)),
+        },
+      };
+    }
+    const [products, count] = await productRepository.findAndCount(criteria);
+    const categories: Map<string, any> = new Map();
+    for (let product of products) {
+      for (let category of product.categories) {
+        if (categories.has(category.id)) {
+          categories.set(category.id, {
+            ...category,
+            quantity: categories.get(category.id).quantity + 1,
+          });
+        } else {
+          categories.set(category.id, {
+            ...category,
+            quantity: 1,
+          });
+        }
+      }
+    }
 
     return {
-      pageSize: pageIndex && pageSize ? Number(pageSize) : undefined,
-      pageIndex: pageIndex && pageSize ? Number(pageIndex) : undefined,
+      pageSize: pageIndex && pageSize ? Number(pageSize) : null,
+      pageIndex: pageIndex && pageSize ? Number(pageIndex) : null,
       count,
       totalPages: pageSize ? Math.ceil(count / Number(pageSize)) : 1,
       products: products.map((product: Product) => {
@@ -48,6 +161,7 @@ export default class ProductRepository {
           images: product.images.map((image) => image.imageUrl),
         };
       }),
+      categories: Array.from(categories.values()),
     };
   };
 
