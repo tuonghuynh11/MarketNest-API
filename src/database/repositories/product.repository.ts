@@ -164,6 +164,130 @@ export default class ProductRepository {
       categories: Array.from(categories.values()),
     };
   };
+  static getProductsByCategory = async (req: Request) => {
+    const { dataSource } = req.app.locals;
+
+    const {
+      pageSize,
+      pageIndex,
+      searchName,
+      sortBy,
+      orderBy,
+      minPrice,
+      maxPrice,
+      rating,
+      place,
+    } = req.query;
+    const { id } = req.params;
+    const productRepository = dataSource.getRepository(Product);
+
+    let criteria: FindManyOptions<Product> = {
+      relations: ["shop", "categories", "images"],
+      where: {
+        categories: {
+          id: In([id]),
+        },
+      },
+      skip:
+        pageSize && pageIndex
+          ? Number(pageSize) * (Number(pageIndex) - 1)
+          : undefined,
+      take: pageSize && pageIndex ? Number(pageSize) : undefined,
+      select: {
+        categories: {
+          id: true,
+          name: true,
+          image: true,
+          description: true,
+        },
+        images: {
+          imageUrl: true,
+        },
+      },
+    };
+
+    if (sortBy) {
+      criteria = {
+        ...criteria,
+        order: {
+          [sortBy as string]: orderBy,
+        },
+      };
+    }
+
+    if (searchName) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          name: ILike(`%${searchName}%`),
+        },
+      };
+    }
+
+    if (rating) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          rate: Number(rating),
+        },
+      };
+    }
+    if (place) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          shop: {
+            city: place.toString(),
+          },
+        },
+      };
+    }
+
+    if (minPrice && maxPrice) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          price:
+            MoreThanOrEqual(Number(minPrice)) &&
+            LessThanOrEqual(Number(maxPrice)),
+        },
+      };
+    } else if (minPrice && !maxPrice) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          price: MoreThanOrEqual(Number(minPrice)),
+        },
+      };
+    } else if (!minPrice && maxPrice) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          price: LessThanOrEqual(Number(maxPrice)),
+        },
+      };
+    }
+    const [products, count] = await productRepository.findAndCount(criteria);
+
+    return {
+      pageSize: pageIndex && pageSize ? Number(pageSize) : null,
+      pageIndex: pageIndex && pageSize ? Number(pageIndex) : null,
+      count,
+      totalPages: pageSize ? Math.ceil(count / Number(pageSize)) : 1,
+      products: products.map((product: Product) => {
+        return {
+          ...omit(product, ["images"]),
+          images: product.images.map((image) => image.imageUrl),
+        };
+      }),
+    };
+  };
 
   static getProductById = async (req: Request) => {
     const { id } = req.params;
