@@ -35,39 +35,99 @@ export default class ShopkeeperRepository {
     if (!shop) {
       throw new Error("Shop not found");
     }
-    //Get number of orders today
-    const ordersOfToday = await orderRepository.count({
-      where: {
-        shop: {
-          owner: {
-            id: session.userId,
+
+    const temp = new Date();
+    // Get the start date of the current month (1st day of the month)
+    const startDate = new Date(temp.getFullYear(), temp.getMonth(), 1);
+
+    // Get the end date of the current month (last day of the month)
+    const endDate = new Date(temp.getFullYear(), temp.getMonth() + 1, 0);
+    const [
+      ordersOfToday,
+      totalQuantityOfSoldProducts,
+      totalCurrentOfProducts,
+      numberOfOldCustomers,
+      numberOfNewCustomers,
+      currentProfit,
+      totalProfit,
+      profitForEachDay,
+    ] = await Promise.all([
+      orderRepository.count({
+        where: {
+          shop: {
+            owner: {
+              id: session.userId,
+            },
           },
+          createdAt: new Date(),
         },
-        createdAt: new Date(),
-      },
-    });
-
-    //Get total quantity of sold products
-    const totalQuantityOfSoldProducts = await orderDetailRepository
-      .createQueryBuilder("od")
-      .innerJoin("od.product", "p")
-      .innerJoin("p.shop", "s")
-      .innerJoin("od.order", "o")
-      .where("s.ownerId = :ownerId", { ownerId: session.userId })
-      .andWhere("o.orderStatus = :status", { status: "Completed" })
-      .select("SUM(od.quantity)", "totalQuantity")
-      .getRawOne();
-
-    //Get current total quantity of products
-    const totalCurrentOfProducts = await orderRepository.query(
-      `
-      SELECT SUM(stock)
-      FROM products
-      WHERE "shopId" IN 
-      (SELECT id FROM shops WHERE "ownerId" = $1)
-      `,
-      [session.userId]
-    );
+      }),
+      orderDetailRepository
+        .createQueryBuilder("od")
+        .innerJoin("od.product", "p")
+        .innerJoin("p.shop", "s")
+        .innerJoin("od.order", "o")
+        .where("s.ownerId = :ownerId", { ownerId: session.userId })
+        .andWhere("o.orderStatus = :status", { status: "Completed" })
+        .select("SUM(od.quantity)", "totalQuantity")
+        .getRawOne(),
+      orderRepository.query(
+        `
+        SELECT SUM(stock)
+        FROM products
+        WHERE "shopId" IN 
+        (SELECT id FROM shops WHERE "ownerId" = $1)
+        `,
+        [session.userId]
+      ),
+      orderRepository.query(
+        `select COUNT(u.id) AS "count"
+          FROM users u
+          JOIN orders o
+          ON u.id = o."userId" 
+          WHERE o."shopId"
+          in
+          (SELECT id FROM shops WHERE "ownerId" = $1)
+          AND "orderStatus"  = 'Completed'
+          AND o."createdAt"  < now()
+          GROUP BY u.id
+          having COUNT(o.id) > 1`,
+        [session.userId]
+      ),
+      orderRepository.query(
+        `SELECT COUNT(u.id) 
+          FROM users u 
+          JOIN orders o
+           ON u.id = o."userId"
+            WHERE o."shopId" IN
+             (SELECT id FROM shops WHERE "ownerId" = $1)
+            AND "orderStatus" = 'Completed' 
+            GROUP BY u.id
+            HAVING u.id NOT IN 
+            (
+            select k.id
+            FROM users k
+            JOIN orders m
+            ON k.id = m."userId" 
+            WHERE m."shopId"
+            in
+            (SELECT id FROM shops WHERE "ownerId" = $1)
+            AND "orderStatus"  = 'Completed'
+            AND m."createdAt"  < now()
+            GROUP BY k.id
+            having COUNT(m.id) > 1
+            )
+            `,
+        [session.userId]
+      ),
+      ShopkeeperRepository.calculateTotalProfit(req, temp, temp),
+      ShopkeeperRepository.calculateTotalProfit(
+        req,
+        new Date(shop.createdAt),
+        temp
+      ),
+      this.calculateTotalProfitForEachDay(req, startDate, endDate),
+    ]);
 
     // StockPercent
     const stockPercent =
@@ -76,56 +136,7 @@ export default class ShopkeeperRepository {
           Number(totalCurrentOfProducts[0].sum))) *
       100;
 
-    // NewUsersPercent
-    const numberOfOldCustomers = await orderRepository.query(
-      `select COUNT(u.id) AS "count"
-        FROM users u
-        JOIN orders o
-        ON u.id = o."userId" 
-        WHERE o."shopId"
-        in
-        (SELECT id FROM shops WHERE "ownerId" = $1)
-        AND "orderStatus"  = 'Completed'
-        AND o."createdAt"  < now()
-        GROUP BY u.id
-        having COUNT(o.id) > 1`,
-      [session.userId]
-    );
-    console.log(
-      "🚀 ~ ShopkeeperRepository ~ numberOfOldCustomers:",
-      numberOfOldCustomers
-    );
-    const numberOfNewCustomers = await orderRepository.query(
-      `SELECT COUNT(u.id) 
-      FROM users u 
-      JOIN orders o
-       ON u.id = o."userId"
-        WHERE o."shopId" IN
-         (SELECT id FROM shops WHERE "ownerId" = $1)
-        AND "orderStatus" = 'Completed' 
-        GROUP BY u.id
-        HAVING u.id NOT IN 
-        (
-        select k.id
-        FROM users k
-        JOIN orders m
-        ON k.id = m."userId" 
-        WHERE m."shopId"
-        in
-        (SELECT id FROM shops WHERE "ownerId" = $1)
-        AND "orderStatus"  = 'Completed'
-        AND m."createdAt"  < now()
-        GROUP BY k.id
-        having COUNT(m.id) > 1
-        )
-        `,
-      [session.userId]
-    );
-    console.log(
-      "🚀 ~ ShopkeeperRepository ~ numberOfNewCustomers:",
-      numberOfNewCustomers
-    );
-
+    //NewUsersPercent
     let newUsersPercent = 0;
     if (numberOfNewCustomers.length + numberOfOldCustomers.length > 0) {
       newUsersPercent =
@@ -134,19 +145,6 @@ export default class ShopkeeperRepository {
         100;
     }
 
-    // Current Profit
-    const temp = new Date();
-    const currentProfit = await ShopkeeperRepository.calculateTotalProfit(
-      req,
-      temp,
-      temp
-    );
-
-    const totalProfit = await ShopkeeperRepository.calculateTotalProfit(
-      req,
-      new Date(shop.createdAt),
-      temp
-    );
     return {
       ordersOfToday,
       totalQuantityOfSoldProducts: Number(
@@ -156,7 +154,8 @@ export default class ShopkeeperRepository {
       stockPercent: Math.floor(stockPercent),
       newUsersPercent,
       currentProfit,
-      totalProfit,
+      todayTotalProfit: totalProfit,
+      profitForEachDay,
     };
   };
   static calculateProfitForOrder = async (
