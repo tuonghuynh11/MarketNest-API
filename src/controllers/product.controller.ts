@@ -34,7 +34,7 @@ export default class ProductController {
     try {
       const response = await ProductRepository.getProductById(req);
       res.locals.data = {
-        product: response.product,
+        product: response,
       };
 
       next();

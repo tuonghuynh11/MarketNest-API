@@ -20,7 +20,7 @@ import {
 } from "../../utils/errors";
 import { sendMail } from "../../utils/email";
 import config from "../../configuration";
-import { UserStatus } from "../entities/Product";
+import { UserStatus } from "../entities/User";
 import { compareSync } from "bcryptjs";
 import { verify } from "jsonwebtoken";
 
