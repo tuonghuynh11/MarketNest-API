@@ -52,4 +52,7 @@ export class Shop extends AppBaseEntity {
 
   @Column({ nullable: true })
   address: string;
+
+  @Column({ default: 0, type: "float" })
+  rate: number;
 }

@@ -23,6 +23,7 @@ import config from "../../configuration";
 import { UserStatus } from "../entities/User";
 import { compareSync } from "bcryptjs";
 import { verify } from "jsonwebtoken";
+import { Shop } from "../entities/Shop";
 
 export default class AuthRepository {
   static getRoleByUser = async ({ dataSource, userId }: any) => {
@@ -519,6 +520,7 @@ export default class AuthRepository {
     const { session } = res.locals;
     verify(session.accessToken, config.jwtAccessKey);
     const userRepository = dataSource.getRepository(User);
+    const shopRepository = dataSource.getRepository(Shop);
 
     const user: User | null = await userRepository.findOneBy({
       id: session.userId,
@@ -526,9 +528,17 @@ export default class AuthRepository {
     if (!user) {
       throw new NotFoundError("User account is not found.");
     }
+
+    const shop = await shopRepository.findOneBy({
+      owner: {
+        id: session.userId,
+      },
+    });
+
     return {
       user: {
         ...omit(user, ["hashPassword", "resetToken", "activeToken"]),
+        shop,
       },
     };
   };
