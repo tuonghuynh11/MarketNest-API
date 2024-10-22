@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { User } from "../entities/User";
 import { Session } from "../entities/Session";
-import { UserStatus } from "../entities/Product";
+import { UserStatus } from "../entities/User";
 import { Like } from "typeorm";
 import { Role } from "../entities/Role";
 import {

@@ -296,14 +296,15 @@ export default class ProductRepository {
 
     const product = await productRepository.findOne({
       where: { id },
-      relations: ["shop", "categories", "images"],
+      relations: ["shop", "categories", "images", "ratings"],
     });
 
     if (!product) {
       throw new NotFoundError("Product is not found.");
     }
     return {
-      product,
+      ...product,
+      ratings: product.ratings.length,
     };
   };
 

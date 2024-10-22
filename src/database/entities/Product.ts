@@ -16,8 +16,7 @@ import ProductImage from "./ProductImage";
 import ProductCategory from "./ProductCategory";
 import OrderDetail from "./OrderDetail";
 
-export enum UserStatus {
-  PENDING = "PENDING",
+export enum ProductStatus {
   ACTIVE = "ACTIVE",
   DISABLED = "DISABLED",
 }
@@ -38,6 +37,13 @@ export class Product extends AppBaseEntity {
 
   @Column({ default: 0, type: "float" })
   rate: number;
+
+  @Column({
+    type: "enum",
+    enum: ProductStatus,
+    default: ProductStatus.DISABLED,
+  })
+  status: ProductStatus;
 
   @ManyToOne(() => Shop, (shop) => shop.products)
   @JoinColumn({ name: "shopId", referencedColumnName: "id" })
