@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import Authenticate from "../decorators/authenticate";
 import Authorize from "../decorators/authorize";
 import Controller from "../decorators/controller";
-import { Get } from "../decorators/handlers";
+import { Get, Post } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
 import OrderRepository from "../database/repositories/order.repository";
 
@@ -18,6 +18,25 @@ export default class OrderController {
   ): Promise<void> {
     try {
       const response = await OrderRepository.getOrderById({ req, res });
+      res.locals.data = {
+        ...response,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Post("/")
+  @Authorize([SystemRole.User])
+  public async create(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await OrderRepository.createOrder({ req, res });
       res.locals.data = {
         ...response,
       };
