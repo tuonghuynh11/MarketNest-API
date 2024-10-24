@@ -39,7 +39,7 @@ export default class Order extends AppBaseEntity {
 
   @ManyToOne(() => Discount, (discount) => discount.orders)
   @JoinColumn({ name: "discountId", referencedColumnName: "id" })
-  discount: Discount;
+  discount?: Discount;
 
   @Column({
     type: "enum",
