@@ -47,4 +47,41 @@ export default class ShopkeeperController {
       next(error);
     }
   }
+
+  @Get("/me")
+  public async getMe(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await ShopkeeperRepository.getMe({ req, res });
+      res.locals.message = "Get shop information successfully.";
+      res.locals.data = response;
+      next();
+    } catch (error) {
+      next(error);
+    }
+    next();
+  }
+
+  @Get("/categories/:id/products")
+  @Authorize([SystemRole.Shopkeeper])
+  public async getProductsByCategory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await ShopkeeperRepository.getProductsByCategory({
+        req,
+        res,
+      });
+      res.locals.data = response;
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 }
