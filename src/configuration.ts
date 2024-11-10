@@ -71,6 +71,24 @@ class Config implements ConfigValues {
   google_client_secret = process.env.GOOGLE_CLIENT_SECRET || "";
   google_redirect_uri = process.env.GOOGLE_REDIRECT_URI || "";
   google_client_redirect_callback = process.env.CLIENT_REDIRECT_CALLBACK || "";
+
+  // MOMO
+  momo_access_key = process.env.MOMO_ACCESS_KEY || "";
+  momo_secret_key = process.env.MOMO_SECRET_KEY || "";
+  momo_partner_code = process.env.MOMO_PARTNER_CODE || "";
+  momo_redirect_url = process.env.MOMO_REDIRECT_URL || "";
+  momo_request_type = process.env.MOMO_REQUEST_TYPE || "";
+  momo_payment_code = process.env.MOMO_PAYMENT_CODE || "";
+  momo_language = process.env.MOMO_LANGUAGE || "";
+  momo_auto_capture = process.env.MOMO_AUTO_CAPTURE === "true" ? true : false;
+  momo_order_expire_time = Number(process.env.MOMO_ORDER_EXPIRE_TIME) || 5;
+  //ZALO PAY
+  zalo_app_id = process.env.ZALO_APP_ID || "";
+  zalo_key_1 = process.env.ZALO_KEY_1 || "";
+  zalo_key_2 = process.env.ZALO_KEY_2 || "";
+  zalo_endpoint = process.env.ZALO_END_POINT || "";
+  zalo_redirect_url = process.env.ZALO_REDIRECT_URL || "";
+  zalo_app_user = process.env.ZALO_APP_USER || "";
 }
 
 export default new Config();
