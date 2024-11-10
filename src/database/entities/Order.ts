@@ -5,7 +5,7 @@ import PaymentMethod from "./PaymentMethod";
 import ShippingMethod from "./ShippingMethod";
 import Address from "./Address";
 import Discount from "./Discount";
-import { OrderStatus, RefundStatus } from "../../utils/enums";
+import { OrderStatus, PaymentStatus, RefundStatus } from "../../utils/enums";
 import OrderDetail from "./OrderDetail";
 import { Shop } from "./Shop";
 
@@ -48,9 +48,20 @@ export default class Order extends AppBaseEntity {
   })
   orderStatus: OrderStatus;
 
+  @Column({
+    type: "enum",
+    enum: PaymentStatus,
+    default: PaymentStatus.UNPAID,
+  })
+  paymentStatus: PaymentStatus;
+
   @Column({ type: "enum", enum: RefundStatus, nullable: true })
   refundStatus: RefundStatus;
 
   @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order)
   orderDetails: OrderDetail[];
+
+  // Order Id from payment service
+  @Column({ nullable: true })
+  orderPaymentId?: string;
 }

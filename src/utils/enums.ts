@@ -53,3 +53,7 @@ export enum SystemRole {
   Shopkeeper = "Shopkeeper",
   SuperAdmin = "SuperAdmin",
 }
+export enum PaymentStatus {
+  UNPAID = "Unpaid",
+  PAID = "Paid",
+}
