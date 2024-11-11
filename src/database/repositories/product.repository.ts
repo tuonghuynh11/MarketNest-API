@@ -6,6 +6,7 @@ import {
   In,
   LessThanOrEqual,
   MoreThanOrEqual,
+  Not,
 } from "typeorm";
 import { ForbiddenError, NotFoundError } from "../../utils/errors";
 import { Shop } from "../entities/Shop";
@@ -281,6 +282,67 @@ export default class ProductRepository {
       count,
       totalPages: pageSize ? Math.ceil(count / Number(pageSize)) : 1,
       products: products.map((product: Product) => {
+        return {
+          ...omit(product, ["images"]),
+          images: product.images.map((image) => image.imageUrl),
+        };
+      }),
+    };
+  };
+  static getRelatedProducts = async (req: Request) => {
+    const { dataSource } = req.app.locals;
+
+    const { id } = req.params;
+    const productRepository = dataSource.getRepository(Product);
+
+    const product = await productRepository.findOne({
+      relations: ["shop", "categories", "images"],
+      where: { id },
+    });
+
+    if (!product) {
+      throw new NotFoundError("Product is not found.");
+    }
+
+    console.log(product);
+
+    let criteria: FindManyOptions<Product> = {
+      relations: ["shop", "categories", "images"],
+      where: {
+        categories: {
+          id: In([id]),
+        },
+      },
+      select: {
+        categories: {
+          id: true,
+          name: true,
+          image: true,
+          description: true,
+        },
+        images: {
+          imageUrl: true,
+        },
+      },
+    };
+    const [products] = await productRepository.find(criteria);
+
+    const categoriesId: string[] = product.categories.map((category: any) => {
+      return category.id;
+    });
+
+    const relatedProducts = await productRepository.find({
+      relations: ["shop", "categories", "images"],
+      where: {
+        categories: {
+          id: In(categoriesId),
+        },
+        id: Not(id),
+      },
+      take: 20,
+    });
+    return {
+      related_products: relatedProducts.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
           images: product.images.map((image) => image.imageUrl),

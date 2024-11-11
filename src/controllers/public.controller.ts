@@ -19,6 +19,20 @@ export default class PublicController {
       next(error);
     }
   }
+  @Get("/products/:id/related")
+  public async getRelatedProduct(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await ProductRepository.getRelatedProducts(req);
+      res.locals.data = response;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
   @Get("/categories/:id/products")
   public async getProductByCategory(
     req: Request,
