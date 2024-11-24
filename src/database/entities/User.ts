@@ -74,7 +74,7 @@ export class User extends AppBaseEntity {
   @OneToMany(() => ChatDetail, (chatDetail) => chatDetail.sender)
   chatDetails: ChatDetail[];
 
-  @OneToMany(() => Notification, (notification) => notification.user)
+  @OneToMany(() => Notification, (notification) => notification.assignee)
   notifications: Notification[];
 
   @OneToMany(() => Rating, (rating) => rating.user)

@@ -11,6 +11,8 @@ import Discount from "../entities/Discount";
 import { Shop } from "../entities/Shop";
 import { Product } from "../entities/Product";
 import { In } from "typeorm";
+import { OrderStatusesEnumActive } from "../../common/constants/order-status.enum";
+import { createNotification } from "./notification.repository";
 
 export default class OrderRepository {
   static getOrderById = async ({
@@ -231,5 +233,79 @@ export default class OrderRepository {
     );
 
     return savedOrder;
+  };
+  static updateOrderStatus = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { dataSource, socket } = req.app.locals;
+    const { session } = res.locals;
+    const orderRepository = dataSource.getRepository(Order);
+
+    const { status } = req.body;
+    const id = req.params.id;
+
+    const order = await orderRepository.findOne({
+      relations: {
+        user: true,
+        shop: {
+          owner: true,
+        },
+      },
+      where: {
+        id,
+      },
+    });
+
+    if (!order) {
+      throw new NotAcceptableError("Order not found");
+    }
+
+    if (session.userId !== order.shop.owner.id) {
+      throw new NotAcceptableError("You are not owner of this order");
+    }
+
+    const inValidStatusWorkFlow = this.checkChangeOrderStatusWorkFlow(
+      order!.orderStatus,
+      status
+    );
+
+    if (inValidStatusWorkFlow) {
+      throw new NotAcceptableError(inValidStatusWorkFlow);
+    }
+
+    order!.orderStatus = status;
+    await orderRepository.save(order!);
+
+    const urlChangeOrderStatus = `/order/${order!.id}`;
+
+    await createNotification({
+      title: "Order status has been updated",
+      assignee: order!.user.id,
+      content: `The order ${order.id} has been updated to ${status}`,
+      createdBy: session.userId,
+      dataSource: dataSource,
+      socket: socket,
+      actions: urlChangeOrderStatus,
+    });
+
+    return order;
+  };
+
+  static checkChangeOrderStatusWorkFlow = (
+    currentStatus: OrderStatus,
+    newStatus: OrderStatus
+  ) => {
+    if (
+      !OrderStatusesEnumActive[
+        currentStatus as keyof typeof OrderStatusesEnumActive
+      ].includes(newStatus)
+    ) {
+      return `Can not update order status to ${newStatus}`;
+    }
+    return null;
   };
 }

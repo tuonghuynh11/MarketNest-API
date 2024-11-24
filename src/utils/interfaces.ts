@@ -1,4 +1,7 @@
+import { Socket } from "socket.io";
 import { MediaType, SystemRole } from "./enums";
+import { DataSource } from "typeorm";
+import { User } from "../database/entities/User";
 
 export interface IAuthorize {
   roles: SystemRole[] | string;
@@ -16,4 +19,16 @@ export interface ProfitCalculation {
   deliveryCost: number;
   discount: number;
   profit: number;
+}
+
+export interface ICreateNotification {
+  socket: Socket;
+  dataSource: DataSource;
+  content: string;
+  contentType?: string;
+  actions?: any;
+  assignee: User | string;
+  createdBy: string;
+  title: string;
+  image?: string;
 }
