@@ -12,7 +12,7 @@ export default class PaymentService {
     const secretKey = configuration.momo_secret_key;
     const partnerCode = configuration.momo_partner_code;
     const redirectUrl = configuration.momo_redirect_url;
-    const ipnUrl = `${configuration.serverSite}/payment/momo/callback`;
+    const ipnUrl = `${configuration.serverSite}/api/v1/payment/momo/callback`;
     const requestType = configuration.momo_request_type;
     const amount = orderAmount.toString();
     const orderExpireTime = configuration.momo_order_expire_time;
@@ -160,7 +160,7 @@ export default class PaymentService {
       amount: orderAmount,
       //khi thanh toán xong, zalopay server sẽ POST đến url này để thông báo cho server của mình
       //Chú ý: cần dùng ngrok để public url thì Zalopay Server mới call đến được
-      callback_url: `${configuration.serverSite}/payment/zalopay/callback`,
+      callback_url: `${configuration.serverSite}/api/v1/payment/zalopay/callback`,
       description: `Payment for the order #${transID}`,
       bank_code: "",
       mac: "",

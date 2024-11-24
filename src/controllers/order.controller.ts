@@ -46,4 +46,22 @@ export default class OrderController {
       next(error);
     }
   }
+  @Post("/:id/status")
+  @Authorize([SystemRole.Shopkeeper])
+  public async updateOrderStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await OrderRepository.updateOrderStatus({ req, res });
+      res.locals.data = {
+        ...response,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 }

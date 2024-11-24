@@ -8,6 +8,8 @@ import PaymentRepository from "../database/repositories/payment.repository";
 import Order from "../database/entities/Order";
 import { PaymentStatus } from "../utils/enums";
 import configuration from "../configuration";
+import { createNotification } from "../database/repositories/notification.repository";
+import { ENotificationType } from "../database/entities/Notification";
 @Controller("/payment")
 @Authenticate()
 export default class PaymentController {
@@ -46,7 +48,8 @@ export default class PaymentController {
       console.log("callback: ");
       console.log(req.body);
       const { resultCode, orderId } = req.body;
-      const { dataSource } = req.app.locals;
+      const { dataSource, socket } = req.app.locals;
+      const { session } = res.locals;
       const orderRepository = dataSource.getRepository(Order);
 
       /**
@@ -69,10 +72,44 @@ export default class PaymentController {
       }
    */
       if (resultCode === 0) {
-        const order = await orderRepository.findOneBy({
-          orderPaymentId: orderId,
+        const order = await orderRepository.findOne({
+          relations: {
+            user: true,
+            shop: {
+              owner: true,
+            },
+          },
+          where: {
+            orderPaymentId: orderId,
+          },
         });
         order!.paymentStatus = PaymentStatus.PAID;
+        await orderRepository.save(order!);
+
+        const urlOrderDetail = `/shopkeeper/orders/${order?.id}`;
+
+        await Promise.all([
+          createNotification({
+            title: "Order Payment",
+            contentType: ENotificationType.PERSONAL,
+            assignee: order?.user.id!,
+            content: `The order ${order?.id} has been paid successfully`,
+            createdBy: session.userId,
+            dataSource: dataSource,
+            socket: socket,
+            actions: urlOrderDetail,
+          }),
+          createNotification({
+            title: "Order Payment",
+            contentType: ENotificationType.PERSONAL,
+            assignee: order?.shop?.owner.id!,
+            content: `The order ${order?.id} has been paid successfully`,
+            createdBy: session.userId,
+            dataSource: dataSource,
+            socket: socket,
+            actions: urlOrderDetail,
+          }),
+        ]);
       }
       res.locals.message = "Payment success";
       res.locals.data = {
@@ -137,7 +174,9 @@ export default class PaymentController {
     console.log(req.body);
     try {
       console.log("callback: ");
-      const { dataSource } = req.app.locals;
+      const { dataSource, socket } = req.app.locals;
+      const { session } = res.locals;
+
       const orderRepository = dataSource.getRepository(Order);
 
       let dataStr = req.body.data;
@@ -162,11 +201,44 @@ export default class PaymentController {
           "update order's status = success where app_trans_id =",
           dataJson["app_trans_id"]
         );
-        const order = await orderRepository.findOneBy({
-          orderPaymentId: dataJson["app_trans_id"],
+        const order = await orderRepository.findOne({
+          relations: {
+            user: true,
+            shop: {
+              owner: true,
+            },
+          },
+          where: {
+            orderPaymentId: dataJson["app_trans_id"],
+          },
         });
         order!.paymentStatus = PaymentStatus.PAID;
         await orderRepository.save(order!);
+
+        const urlOrderDetail = `/shopkeeper/orders/${order?.id}`;
+
+        await Promise.all([
+          createNotification({
+            title: "Order Payment",
+            contentType: ENotificationType.PERSONAL,
+            assignee: order?.user.id!,
+            content: `The order ${order?.id} has been paid successfully`,
+            createdBy: session.userId,
+            dataSource: dataSource,
+            socket: socket,
+            actions: urlOrderDetail,
+          }),
+          createNotification({
+            title: "Order Payment",
+            contentType: ENotificationType.PERSONAL,
+            assignee: order?.shop?.owner.id!,
+            content: `The order ${order?.id} has been paid successfully`,
+            createdBy: session.userId,
+            dataSource: dataSource,
+            socket: socket,
+            actions: urlOrderDetail,
+          }),
+        ]);
 
         result.return_code = 1;
         result.return_message = "success";

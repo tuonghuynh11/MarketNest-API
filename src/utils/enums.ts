@@ -28,7 +28,7 @@ export enum OrderStatus {
   IN_DELIVERY = "In_Delivery",
   DELIVERY_FAILED = "Delivery_Failed",
   COMPLETED = "Completed",
-  CANCELLED = "cancelled",
+  CANCELLED = "Cancelled",
 }
 
 export enum RefundStatus {

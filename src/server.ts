@@ -7,12 +7,19 @@ import Logger from "./utils/logger";
 import config from "./configuration";
 import { AppDataSource } from "./database/data-source";
 import { createTransport } from "nodemailer";
+import configuration from "./configuration";
 
 const { instance: app } = application;
 const httpServer = createServer(app);
-const io = new Server(httpServer, {});
-
+const io = new Server(httpServer, {
+  cors: {
+    origin: configuration.clientSite,
+    credentials: true,
+  },
+});
 io.on("connection", (socket) => {
+  app.locals.socket = socket;
+
   Logger.info(`Socket.IO start with id: ${socket.id}`);
   socket.on("disconnect", (reason) => {
     Logger.info(`Socket.IO end by ${reason}`);
