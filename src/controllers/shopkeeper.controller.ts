@@ -5,6 +5,7 @@ import Controller from "../decorators/controller";
 import { Get } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
 import ShopkeeperRepository from "../database/repositories/shopkeeper.repository";
+import OrderRepository from "../database/repositories/order.repository";
 
 @Controller("/shopkeepers")
 @Authenticate()
@@ -78,6 +79,25 @@ export default class ShopkeeperController {
         res,
       });
       res.locals.data = response;
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Get("/orders")
+  @Authorize([SystemRole.Shopkeeper])
+  public async getListOrder(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await OrderRepository.getListOrder({ req, res });
+      res.locals.data = {
+        ...response,
+      };
 
       next();
     } catch (error) {

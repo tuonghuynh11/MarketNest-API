@@ -20,6 +20,7 @@ export enum ProductStatus {
   ACTIVE = "ACTIVE",
   DISABLED = "DISABLED",
   OUT_OF_STOCK = "OUT_OF_STOCK",
+  ADMIN_DISABLED = "ADMIN_DISABLED",
 }
 
 @Entity("products")

@@ -29,6 +29,10 @@ export enum OrderStatus {
   DELIVERY_FAILED = "Delivery_Failed",
   COMPLETED = "Completed",
   CANCELLED = "Cancelled",
+  REFUND = "Refund",
+  REFUND_FAILED = "Refund_Failed",
+  REFUND_COMPLETED = "Refund_Completed",
+  REFUND_REJECTED = "Refund_Rejected",
 }
 
 export enum RefundStatus {

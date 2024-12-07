@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { User } from "./User";
 import { AppBaseEntity } from "./AppBase";
 import { Shop } from "./Shop";
@@ -16,4 +16,7 @@ export default class ChatRoom extends AppBaseEntity {
 
   @OneToMany(() => ChatDetail, (chatDetail) => chatDetail.chatRoom)
   chatDetails: ChatDetail[];
+
+  @Column()
+  title: string;
 }

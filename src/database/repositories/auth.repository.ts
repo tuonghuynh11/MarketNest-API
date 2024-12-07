@@ -24,6 +24,7 @@ import { UserStatus } from "../entities/User";
 import { compareSync } from "bcryptjs";
 import { verify } from "jsonwebtoken";
 import { Shop } from "../entities/Shop";
+import ShopRepository from "./shop.repository";
 
 export default class AuthRepository {
   static getRoleByUser = async ({ dataSource, userId }: any) => {
@@ -217,6 +218,11 @@ export default class AuthRepository {
       dataSource,
       userId: user.id,
     });
+
+    const shops = await ShopRepository.getShopByUser({
+      dataSource,
+      userId: user.id,
+    });
     return {
       accessToken,
       refreshToken,
@@ -224,6 +230,7 @@ export default class AuthRepository {
       session: {
         userId: user.id,
         ...rolePermission,
+        ...shops,
         accessToken: session.accessToken,
       },
     };
@@ -272,6 +279,7 @@ export default class AuthRepository {
         dataSource,
         userId: newUser.id,
       });
+
       return {
         accessToken,
         refreshToken,

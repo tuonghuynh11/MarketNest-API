@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Product } from "../entities/Product";
+import { Product, ProductStatus } from "../entities/Product";
 import {
   FindManyOptions,
   ILike,
@@ -424,9 +424,17 @@ export default class ProductRepository {
 
   static update = async ({ req, res }: { req: Request; res: Response }) => {
     const { id } = req.params;
-    const { name, description, price, stock, shopId, categoryIds, imageUrls } =
-      req.body;
-
+    const {
+      name,
+      description,
+      price,
+      stock,
+      shopId,
+      categoryIds,
+      imageUrls,
+      status,
+    } = req.body;
+    console.log("Body:", req.body);
     const { dataSource } = req.app.locals;
     const productRepository = dataSource.getRepository(Product);
     const shopRepository = dataSource.getRepository(Shop);
@@ -455,6 +463,20 @@ export default class ProductRepository {
     product.price = price ?? product.price;
     product.stock = stock ?? product.stock;
 
+    if (status) {
+      if (product.status === ProductStatus.ADMIN_DISABLED) {
+        throw new ForbiddenError(
+          "Cannot update status of ADMIN_DISABLED product"
+        );
+      } else {
+        if (status === ProductStatus.ADMIN_DISABLED) {
+          throw new ForbiddenError("Cannot update status to ADMIN_DISABLED");
+        } else {
+          product.status = status || product.status;
+        }
+      }
+    }
+    console.log("Product updated", product.status);
     if (categoryIds) {
       const categories = await categoryRepository.findByIds(categoryIds);
       if (categories.length !== categoryIds.length) {
@@ -490,6 +512,33 @@ export default class ProductRepository {
         categories: product.categories,
       },
     };
+  };
+  static updateByAdmin = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const { dataSource } = req.app.locals;
+    const productRepository = dataSource.getRepository(Product);
+
+    const product = await productRepository.findOne({
+      where: { id },
+      relations: ["categories", "images"],
+    });
+
+    if (!product) {
+      throw new NotFoundError("Product not found.");
+    }
+
+    product.status = status || product.status;
+
+    await productRepository.save(product);
+
+    return product;
   };
 
   static softDelete = async (req: Request, res: Response) => {
