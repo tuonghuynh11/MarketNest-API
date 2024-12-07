@@ -18,4 +18,7 @@ export default class ChatDetail extends AppBaseEntity {
 
   @Column()
   message: string;
+
+  @Column({ default: false })
+  isRead: boolean;
 }

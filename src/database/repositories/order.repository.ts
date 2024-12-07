@@ -10,9 +10,10 @@ import Address from "../entities/Address";
 import Discount from "../entities/Discount";
 import { Shop } from "../entities/Shop";
 import { Product } from "../entities/Product";
-import { In } from "typeorm";
+import { In, Like } from "typeorm";
 import { OrderStatusesEnumActive } from "../../common/constants/order-status.enum";
 import { createNotification } from "./notification.repository";
+import { UserDiscount } from "../entities/UserDiscount";
 
 export default class OrderRepository {
   static getOrderById = async ({
@@ -110,6 +111,55 @@ export default class OrderRepository {
 
     return formatData;
   };
+  static getListOrder = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { session } = res.locals;
+    const { dataSource } = req.app.locals;
+    const orderRepository = dataSource.getRepository(Order);
+
+    const { pageSize = 100, pageIndex = 1, status, searchName } = req.query;
+
+    const conditions = {
+      orderStatus: status
+        ? OrderStatus[status as keyof typeof OrderStatus]
+        : undefined,
+      id: searchName ? Like(`%${searchName}%`) : undefined,
+      shop: {
+        owner: {
+          id: session.userId,
+        },
+      },
+    };
+    const orders = await orderRepository.find({
+      skip: Number(pageSize) * (Number(pageIndex) - 1),
+      take: Number(pageSize),
+      relations: {
+        shop: {
+          owner: true,
+        },
+      },
+      where: conditions,
+    });
+
+    const count = await orderRepository.count({
+      where: conditions,
+    });
+
+    return {
+      pageSize: Number(pageSize),
+      pageIndex: Number(pageIndex),
+      count,
+      totalPages: Math.ceil(count / Number(pageSize)),
+      orders: orders.map((order: Order) => {
+        return { ...omit(order, ["shop"]) };
+      }),
+    };
+  };
 
   static createOrder = async ({
     req,
@@ -126,6 +176,7 @@ export default class OrderRepository {
     const shippingMethodRepository = dataSource.getRepository(ShippingMethod);
     const addressRepository = dataSource.getRepository(Address);
     const discountRepository = dataSource.getRepository(Discount);
+    const userDiscountRepository = dataSource.getRepository(UserDiscount);
     const shopRepository = dataSource.getRepository(Shop);
     const productRepository = dataSource.getRepository(Product);
 
@@ -175,6 +226,16 @@ export default class OrderRepository {
       if (!discount) {
         throw new NotAcceptableError("Discount not found");
       }
+      discount.used++;
+      const temp = userDiscountRepository.create({
+        user: session.userId,
+        discount,
+        used: true,
+      });
+      await Promise.all([
+        discountRepository.save(discount),
+        userDiscountRepository.save(temp),
+      ]);
     }
 
     const products = await productRepository.find({

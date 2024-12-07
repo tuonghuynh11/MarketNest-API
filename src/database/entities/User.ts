@@ -19,6 +19,8 @@ import Address from "./Address";
 import PaymentInformation from "./PaymentInformation";
 import Order from "./Order";
 import AppReport from "./AppReport";
+import RefundRequest from "./RefundRequest";
+import { UserDiscount } from "./UserDiscount";
 
 export enum UserStatus {
   PENDING = "PENDING",
@@ -97,4 +99,9 @@ export class User extends AppBaseEntity {
 
   @OneToMany(() => AppReport, (appReport) => appReport.receiver)
   appReportsReceiver: AppReport[];
+  @OneToMany(() => RefundRequest, (refundRequest) => refundRequest.user)
+  refundRequests: RefundRequest[];
+
+  @OneToMany(() => UserDiscount, (userDiscount) => userDiscount.user)
+  discounts: UserDiscount[];
 }

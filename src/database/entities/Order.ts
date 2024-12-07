@@ -8,6 +8,7 @@ import Discount from "./Discount";
 import { OrderStatus, PaymentStatus, RefundStatus } from "../../utils/enums";
 import OrderDetail from "./OrderDetail";
 import { Shop } from "./Shop";
+import RefundRequest from "./RefundRequest";
 
 @Entity("orders")
 export default class Order extends AppBaseEntity {
@@ -64,4 +65,7 @@ export default class Order extends AppBaseEntity {
   // Order Id from payment service
   @Column({ nullable: true })
   orderPaymentId?: string;
+
+  @OneToMany(() => RefundRequest, (requestRefund) => requestRefund.order)
+  refundRequest: RefundRequest;
 }

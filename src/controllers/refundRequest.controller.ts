@@ -4,37 +4,77 @@ import Authorize from "../decorators/authorize";
 import Controller from "../decorators/controller";
 import { Delete, Get, Post, Put } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
-import ProductRepository from "../database/repositories/product.repository";
+import RefundRequestRepository from "../database/repositories/refundRequest.repository";
 
-Authenticate();
-@Controller("/products")
-export default class ProductController {
+@Controller("/refund-requests")
+@Authenticate()
+export default class RefundRequestController {
   @Post("/")
-  @Authorize([SystemRole.Shopkeeper])
-  public async add(
+  @Authorize([SystemRole.User])
+  public async createRefundRequest(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const response = await ProductRepository.add({ req, res });
+      const response = await RefundRequestRepository.create({ req, res });
+      res.locals.data = {
+        ...response,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Put("/:id/status")
+  @Authorize([SystemRole.Shopkeeper])
+  public async updateRefundRequestStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await RefundRequestRepository.update({
+        req,
+        res,
+      });
+      res.locals.data = {
+        ...response,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @Get("")
+  @Authorize([SystemRole.Shopkeeper])
+  public async getAll(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await RefundRequestRepository.getAll({ req, res });
       res.locals.data = response;
       next();
     } catch (error) {
       next(error);
     }
   }
-
   @Get("/:id")
-  public async findById(
+  public async getById(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const response = await ProductRepository.getProductById(req);
+      const response = await RefundRequestRepository.getById({ req, res });
       res.locals.data = {
-        product: response,
+        refundRequest: response,
       };
 
       next();
@@ -44,45 +84,6 @@ export default class ProductController {
     next();
   }
 
-  @Put("/:id")
-  @Authorize([SystemRole.Shopkeeper])
-  public async update(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const response = await ProductRepository.update({ req, res });
-      res.locals.data = {
-        product: response.product,
-      };
-
-      next();
-    } catch (error) {
-      next(error);
-    }
-    next();
-  }
-  @Put("/:id/admin")
-  @Authorize([SystemRole.Admin])
-  public async updateByAdmin(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const response = await ProductRepository.updateByAdmin({ req, res });
-      res.locals.message = "Product successfully updated";
-      res.locals.data = {
-        product: response,
-      };
-
-      next();
-    } catch (error) {
-      next(error);
-    }
-    next();
-  }
   /////Is it ok to delete products cause it can link to many others table, how to handle all the cases?
   @Delete("/:id")
   @Authorize([SystemRole.Shopkeeper])
@@ -92,23 +93,8 @@ export default class ProductController {
     next: NextFunction
   ): Promise<void> {
     try {
-      await ProductRepository.softDelete(req, res);
-      res.locals.message = "Product successfully deleted";
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-  @Delete("/:id/permanently")
-  @Authorize([SystemRole.Shopkeeper])
-  public async hardDelete(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      await ProductRepository.hardDelete(req, res);
-      res.locals.message = "Product successfully deleted permanently";
+      await RefundRequestRepository.softDelete(req, res);
+      res.locals.message = "Refund request successfully deleted";
       next();
     } catch (error) {
       next(error);
