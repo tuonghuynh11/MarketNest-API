@@ -13,7 +13,11 @@ const { instance: app } = application;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: configuration.clientSite,
+    origin: [
+      configuration.clientSite,
+      configuration.adminSite,
+      configuration.shopkeeperSite,
+    ],
     credentials: true,
   },
 });

@@ -17,10 +17,10 @@ import ProductCategory from "./ProductCategory";
 import OrderDetail from "./OrderDetail";
 
 export enum ProductStatus {
-  ACTIVE = "ACTIVE",
-  DISABLED = "DISABLED",
-  OUT_OF_STOCK = "OUT_OF_STOCK",
-  ADMIN_DISABLED = "ADMIN_DISABLED",
+  ACTIVE = "Active",
+  DISABLED = "Disabled",
+  OUT_OF_STOCK = "Out_Of_Stock",
+  ADMIN_DISABLED = "Admin_Disabled",
 }
 
 @Entity("products")

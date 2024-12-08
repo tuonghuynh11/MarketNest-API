@@ -44,6 +44,8 @@ class Config implements ConfigValues {
   jwtAccessKey = process.env.JWT_ACCESS_KEY || "THIS IS ACCESS KEY";
   jwtRefreshKey = process.env.JWT_REFRESH_KEY || "THIS IS REFRESH KEY";
   clientSite = process.env.CLIENT_SITE || "http://localhost:5173";
+  adminSite = process.env.ADMIN_SITE || "http://localhost:5173";
+  shopkeeperSite = process.env.SHOPKEEPER_SITE || "http://localhost:5173";
   smtpHost = process.env.SMTP_HOST || "mail9066@yopmail.com";
   smtpPort = parseInt(process.env.SMTP_PORT || "25", 10);
   smtpSecure = process.env.SMTP_SECURE === "true";

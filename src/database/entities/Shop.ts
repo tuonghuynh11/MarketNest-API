@@ -7,6 +7,7 @@ import Rating from "./Rating";
 import { ShopStatus } from "../../utils/enums";
 import Discount from "./Discount";
 import Order from "./Order";
+import AppReport from "./AppReport";
 
 @Entity("shops")
 export class Shop extends AppBaseEntity {
@@ -37,6 +38,9 @@ export class Shop extends AppBaseEntity {
 
   @OneToMany(() => Order, (order) => order.shop)
   orders?: Order[];
+
+  @OneToMany(() => AppReport, (appReport) => appReport.shop)
+  reports?: Order[];
 
   @Column({ type: "enum", enum: ShopStatus, default: ShopStatus.PENDING })
   status: ShopStatus;

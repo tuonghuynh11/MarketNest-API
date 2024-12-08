@@ -1,3 +1,4 @@
+import AdminController from "../controllers/admin.controller";
 import AuthController from "../controllers/auth.controller";
 import CartController from "../controllers/cart.controller";
 import CategoryController from "../controllers/category.controller";
@@ -8,7 +9,9 @@ import OrderController from "../controllers/order.controller";
 import PaymentController from "../controllers/payment.controller";
 import ProductController from "../controllers/product.controller";
 import PublicController from "../controllers/public.controller";
+import RatingController from "../controllers/rating.controller";
 import RefundRequestController from "../controllers/refundRequest.controller";
+import ReportController from "../controllers/report.controller";
 import RoleController from "../controllers/role.controller";
 import ShopController from "../controllers/shop.controller";
 import ShopkeeperController from "../controllers/shopkeeper.controller";
@@ -35,6 +38,9 @@ export const appRouters = [
       DiscountController,
       ShopController,
       ChatController,
+      AdminController,
+      RatingController,
+      ReportController,
     ],
   },
 ];

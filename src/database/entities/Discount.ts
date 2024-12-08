@@ -5,8 +5,8 @@ import { Shop } from "./Shop";
 import { UserDiscount } from "./UserDiscount";
 
 export enum DiscountStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
+  ACTIVE = "Active",
+  INACTIVE = "Inactive",
 }
 @Entity("discounts")
 export default class Discount extends AppBaseEntity {
@@ -35,6 +35,7 @@ export default class Discount extends AppBaseEntity {
     type: "enum",
     enum: DiscountStatus,
     default: DiscountStatus.INACTIVE,
+    nullable: true,
   })
   status?: DiscountStatus;
 
