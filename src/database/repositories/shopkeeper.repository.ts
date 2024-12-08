@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import Order from "../entities/Order";
 import { OrderStatus } from "../../utils/enums";
 import { ProfitCalculation } from "../../utils/interfaces";
-import { Product } from "../entities/Product";
-import { Between, ILike, Not } from "typeorm";
+import { Product, ProductStatus } from "../entities/Product";
+import { Between, FindManyOptions, ILike, Not } from "typeorm";
 import OrderDetail from "../entities/OrderDetail";
 import { Shop } from "../entities/Shop";
 import { omit } from "../../utils";
@@ -341,7 +341,7 @@ export default class ShopkeeperRepository {
     const { session } = res.locals;
     const { dataSource } = req.app.locals;
 
-    const { pageSize, pageIndex, searchName } = req.query;
+    const { pageSize, pageIndex, searchName, status } = req.query;
 
     const productRepository = dataSource.getRepository(Product);
     const shopRepository = dataSource.getRepository(Shop);
@@ -357,7 +357,7 @@ export default class ShopkeeperRepository {
     if (!shop) {
       throw new Error("Shop not found");
     }
-    const [products, count] = await productRepository.findAndCount({
+    let criteria: FindManyOptions<Product> = {
       relations: ["categories", "images"],
       skip:
         pageSize && pageIndex
@@ -381,7 +381,17 @@ export default class ShopkeeperRepository {
           imageUrl: true,
         },
       },
-    });
+    };
+    if (status) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          status: status as ProductStatus,
+        },
+      };
+    }
+    const [products, count] = await productRepository.findAndCount(criteria);
 
     return {
       pageSize: pageIndex && pageSize ? Number(pageSize) : undefined,

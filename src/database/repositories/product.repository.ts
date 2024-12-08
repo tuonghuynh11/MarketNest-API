@@ -51,6 +51,9 @@ export default class ProductRepository {
           imageUrl: true,
         },
       },
+      where: {
+        status: ProductStatus.ACTIVE,
+      },
     };
 
     if (sortBy) {

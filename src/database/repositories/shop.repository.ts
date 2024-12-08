@@ -18,7 +18,8 @@ export default class ShopRepository {
   static getAll = async ({ req, res }: { req: Request; res: Response }) => {
     const { dataSource } = req.app.locals;
     const { session } = res.locals;
-    const { pageSize, pageIndex, sortBy, orderBy, status } = req.query;
+    const { searchName, pageSize, pageIndex, sortBy, orderBy, status } =
+      req.query;
 
     const shopRepository = dataSource.getRepository(Shop);
     const categoryRepository = dataSource.getRepository(ProductCategory);
@@ -58,6 +59,15 @@ export default class ShopRepository {
         ...criteria,
         order: {
           [sortBy as string]: orderBy,
+        },
+      };
+    }
+    if (searchName) {
+      criteria = {
+        ...criteria,
+        where: {
+          ...criteria.where,
+          name: ILike(`%${searchName}%`),
         },
       };
     }
