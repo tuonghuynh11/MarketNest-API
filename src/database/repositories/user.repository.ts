@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { User } from "../entities/User";
 import { Session } from "../entities/Session";
 import { UserStatus } from "../entities/User";
-import { Like } from "typeorm";
+import { In, Like, Not } from "typeorm";
 import { Role } from "../entities/Role";
 import {
   ForbiddenError,
@@ -32,12 +32,20 @@ export default class UserRepository {
     const { pageSize = 100, pageIndex = 1, status, searchName } = req.query;
 
     const userRepository = dataSource.getRepository(User);
+    const roleRepository = dataSource.getRepository(Role);
+    const [adminRole, superAdminRole] = await Promise.all([
+      roleRepository.findOneBy({ name: "Admin" }),
+      roleRepository.findOneBy({ name: "SuperAdmin" }),
+    ]);
     const users = await userRepository.find({
       skip: Number(pageSize) * (Number(pageIndex) - 1),
       take: Number(pageSize),
       where: {
         status: UserStatus[status as keyof typeof UserStatus],
         displayName: searchName ? Like(`%${searchName}%`) : undefined,
+        role: {
+          id: Not(In([adminRole?.id!, superAdminRole?.id!])),
+        },
       },
     });
 
@@ -45,6 +53,9 @@ export default class UserRepository {
       where: {
         status: UserStatus[status as keyof typeof UserStatus],
         displayName: searchName ? Like(`%${searchName}%`) : undefined,
+        role: {
+          id: Not(In([adminRole?.id!, superAdminRole?.id!])),
+        },
       },
     });
 
