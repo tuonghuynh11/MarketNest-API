@@ -40,7 +40,7 @@ export default class ShopRepository {
         image: true,
         owner: {
           id: true,
-          username: true,
+          displayName: true,
           email: true,
           avatar: true,
         },
