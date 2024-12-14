@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import Authenticate from "../decorators/authenticate";
 import Authorize from "../decorators/authorize";
 import Controller from "../decorators/controller";
-import { Get, Post, Put } from "../decorators/handlers";
+import { Delete, Get, Post, Put } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
 import DiscountRepository from "../database/repositories/discount.repository";
 
@@ -98,5 +98,21 @@ export default class DiscountController {
       next(error);
     }
     next();
+  }
+
+  @Delete("/:id/permanently")
+  @Authorize([SystemRole.Admin, SystemRole.Shopkeeper])
+  public async hardDelete(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      await DiscountRepository.hardDelete(req, res);
+      res.locals.message = "Discount successfully deleted permanently";
+      next();
+    } catch (error) {
+      next(error);
+    }
   }
 }

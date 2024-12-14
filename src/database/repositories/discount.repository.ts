@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { FindManyOptions, In, IsNull, Not } from "typeorm";
-import { NotFoundError } from "../../utils/errors";
+import { ForbiddenError, NotFoundError } from "../../utils/errors";
 import { Shop } from "../entities/Shop";
 import Discount, { DiscountStatus } from "../entities/Discount";
 import { User } from "../entities/User";
@@ -276,5 +276,29 @@ export default class DiscountRepository {
 
     await discountRepository.save(discount);
     return discount;
+  };
+  static hardDelete = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const { dataSource } = req.app.locals;
+    const discountRepository = dataSource.getRepository(Discount);
+
+    const discount = await discountRepository.findOne({
+      where: { id },
+    });
+
+    if (!discount) {
+      throw new NotFoundError("Discount not found.");
+    }
+
+    if (discount.createdBy === "migration" || discount.used > 0) {
+      throw new ForbiddenError("Cannot delete this product.");
+    }
+
+    await discountRepository.remove(discount);
+
+    return {
+      message: "Product successfully hard deleted.",
+    };
   };
 }

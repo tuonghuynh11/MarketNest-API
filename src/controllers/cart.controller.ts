@@ -2,9 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import Authenticate from "../decorators/authenticate";
 import Authorize from "../decorators/authorize";
 import Controller from "../decorators/controller";
-import { Delete, Get, Post, Put } from "../decorators/handlers";
+import { Get, Post, Put } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
-import ProductCategoryRepository from "../database/repositories/category.repository";
 import CartRepository from "../database/repositories/cart.repository";
 
 @Controller("/carts")
@@ -20,7 +19,7 @@ export default class CartController {
     try {
       const response = await CartRepository.getCart(req, res);
       res.locals.data = {
-        cart: response.cart,
+        cart: response,
       };
 
       next();
@@ -52,7 +51,7 @@ export default class CartController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const response = await CartRepository.updateCartQuantity( req, res );
+      const response = await CartRepository.updateCartQuantity(req, res);
       res.locals.data = {
         message: response.message,
         cart: response.cart,
