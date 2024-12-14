@@ -7,18 +7,18 @@ import Logger from "./utils/logger";
 import config from "./configuration";
 import { AppDataSource } from "./database/data-source";
 import { createTransport } from "nodemailer";
-import configuration from "./configuration";
 
 const { instance: app } = application;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: [
-      configuration.clientSite,
-      configuration.adminSite,
-      configuration.shopkeeperSite,
-    ],
-    credentials: true,
+    // origin: [
+    //   configuration.clientSite,
+    //   configuration.adminSite,
+    //   configuration.shopkeeperSite,
+    // ],
+    origin: "*",
+    // credentials: true,
   },
 });
 io.on("connection", (socket) => {
