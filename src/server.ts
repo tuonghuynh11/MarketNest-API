@@ -18,7 +18,7 @@ const io = new Server(httpServer, {
     //   configuration.shopkeeperSite,
     // ],
     origin: "*",
-    // credentials: true,
+    credentials: true,
   },
 });
 io.on("connection", (socket) => {
