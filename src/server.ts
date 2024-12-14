@@ -11,15 +11,14 @@ import { createTransport } from "nodemailer";
 const { instance: app } = application;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: {
-    // origin: [
-    //   configuration.clientSite,
-    //   configuration.adminSite,
-    //   configuration.shopkeeperSite,
-    // ],
-    origin: "*",
-    credentials: true,
-  },
+  // cors: {
+  //   origin: [
+  //     configuration.clientSite,
+  //     configuration.adminSite,
+  //     configuration.shopkeeperSite,
+  //   ],
+  //   credentials: true,
+  // },
 });
 io.on("connection", (socket) => {
   app.locals.socket = socket;
