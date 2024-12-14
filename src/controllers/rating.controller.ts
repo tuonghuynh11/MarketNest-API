@@ -41,6 +41,22 @@ export default class RatingController {
     }
     next();
   }
+  @Get("/:idProduct/summary")
+  public async getSummaryRatingOfProduct(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await RatingRepository.getSummaryRatingOfProduct(req);
+      res.locals.data = response;
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+    next();
+  }
 
   /////Is it ok to delete products cause it can link to many others table, how to handle all the cases?
 }

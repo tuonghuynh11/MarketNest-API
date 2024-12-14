@@ -62,6 +62,73 @@ export default class RatingRepository {
       ratings,
     };
   };
+  static getSummaryRatingOfProduct = async (req: Request) => {
+    const { dataSource } = req.app.locals;
+    const { idProduct } = req.params;
+
+    const productRepository = dataSource.getRepository(Product);
+    const ratingRepository = dataSource.getRepository(Rating);
+
+    const product = await productRepository.findOneBy({ id: idProduct });
+    if (!product) {
+      throw new NotFoundError("Product not found.");
+    }
+
+    const [oneStar, twoStar, threeStar, fourStar, fiveStar] = await Promise.all(
+      [
+        ratingRepository.count({
+          where: {
+            product: {
+              id: idProduct,
+            },
+            value: 1,
+          },
+        }),
+        ratingRepository.count({
+          where: {
+            product: {
+              id: idProduct,
+            },
+            value: 2,
+          },
+        }),
+        ratingRepository.count({
+          where: {
+            product: {
+              id: idProduct,
+            },
+            value: 3,
+          },
+        }),
+        ratingRepository.count({
+          where: {
+            product: {
+              id: idProduct,
+            },
+            value: 4,
+          },
+        }),
+        ratingRepository.count({
+          where: {
+            product: {
+              id: idProduct,
+            },
+            value: 5,
+          },
+        }),
+      ]
+    );
+
+    return {
+      oneStar,
+      twoStar,
+      threeStar,
+      fourStar,
+      fiveStar,
+      total: oneStar + twoStar + threeStar + fourStar + fiveStar,
+      average: product.rate,
+    };
+  };
 
   static add = async ({ req, res }: { req: Request; res: Response }) => {
     const { shopId, productId, value, comment } = req.body;
