@@ -8,7 +8,6 @@ import config from "./configuration";
 import { AppDataSource } from "./database/data-source";
 import { createTransport } from "nodemailer";
 import configuration from "./configuration";
-
 const { instance: app } = application;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -17,7 +16,6 @@ const io = new Server(httpServer, {
       configuration.clientSite,
       configuration.adminSite,
       configuration.shopkeeperSite,
-      "*", // Allow all
     ],
     credentials: true,
   },

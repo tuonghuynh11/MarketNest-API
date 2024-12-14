@@ -27,6 +27,7 @@ import config from "./configuration";
 import { IAuthorize } from "./utils/interfaces";
 import { initFolder } from "./utils/file";
 import AuthRepository from "./database/repositories/auth.repository";
+import configuration from "./configuration";
 
 class Application {
   private readonly _instance: ExApplication;
@@ -43,7 +44,11 @@ class Application {
     this._instance.use(express.urlencoded({ extended: false }));
     this._instance.use(
       cors({
-        origin: config.clientSite,
+        origin: [
+          configuration.clientSite,
+          configuration.adminSite,
+          configuration.shopkeeperSite,
+        ],
         credentials: true,
       })
     );
