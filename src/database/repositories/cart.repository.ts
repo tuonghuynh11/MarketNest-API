@@ -42,7 +42,7 @@ export default class CartRepository {
 
     let cart = await cartRepository.findOne({
       where: { user: { id: userId } },
-      relations: ["cartDetails", "cartDetails.product"],
+      relations: ["user", "cartDetails", "cartDetails.product"],
     });
     if (!cart) {
       cart = cartRepository.create({
@@ -59,6 +59,7 @@ export default class CartRepository {
     let cartDetail = cart.cartDetails.find(
       (detail: CartDetail) => detail.product.id === productId
     );
+    console.log("Cartfadfdaffadadf: " + JSON.stringify(cartDetail, null, 2));
 
     if (cartDetail) {
       cartDetail.quantity = cartDetail.quantity + parseInt(quantity);
@@ -71,6 +72,7 @@ export default class CartRepository {
       cart.cartDetails.push(cartDetail);
     }
     await cartDetailRepository.save(cartDetail);
+    // cart.cartDetails = [...cart.cartDetails];
     await cartRepository.save(cart);
 
     return {

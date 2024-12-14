@@ -4,7 +4,6 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import Cart from "./Cart";
@@ -20,7 +19,7 @@ export default class CartDetail {
   @JoinColumn({ name: "cartId", referencedColumnName: "id" })
   cart: Cart;
 
-  @OneToOne(() => Product, (product) => product.cartDetails)
+  @ManyToOne(() => Product, (product) => product.cartDetails)
   @JoinColumn({ name: "productId", referencedColumnName: "id" })
   product: Product;
 
