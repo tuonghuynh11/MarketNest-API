@@ -24,6 +24,9 @@ export default class RatingRepository {
       throw new NotFoundError("Product not found.");
     }
     let criteria: FindManyOptions<Rating> = {
+      relations: {
+        user: true,
+      },
       skip:
         pageSize && pageIndex
           ? Number(pageSize) * (Number(pageIndex) - 1)
@@ -35,6 +38,11 @@ export default class RatingRepository {
         comment: true,
         createdAt: true,
         createdBy: true,
+        user: {
+          id: true,
+          username: true,
+          avatar: true,
+        },
       },
       where: {
         product: {
