@@ -2,9 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import Authenticate from "../decorators/authenticate";
 import Authorize from "../decorators/authorize";
 import Controller from "../decorators/controller";
-import { Get, Post } from "../decorators/handlers";
+import { Get, Post, Put } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
 import ChatRepository from "../database/repositories/chat.repository";
+import ChatDetail from "../database/entities/ChatDetail";
 
 Authenticate();
 @Controller("/chats")
@@ -96,5 +97,31 @@ export default class ChatController {
       next(error);
     }
     next();
+  }
+
+  @Put("/read/:chat_detail_id")
+  @Authorize([SystemRole.Shopkeeper, SystemRole.User])
+  public async read(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { dataSource } = req.app.locals;
+      const { chat_detail_id } = req.params;
+
+      const chatDetailRepository = dataSource.getRepository(ChatDetail);
+
+      await chatDetailRepository
+        .createQueryBuilder()
+        .update(ChatDetail)
+        .set({ isRead: true })
+        .where({ id: chat_detail_id })
+        .execute();
+
+      next();
+    } catch (error) {
+      next(error);
+    }
   }
 }
