@@ -64,4 +64,22 @@ export default class OrderController {
       next(error);
     }
   }
+  @Post("/:id/completed")
+  @Authorize([SystemRole.User])
+  public async makeOrderCompleted(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await OrderRepository.makeOrderCompleted({ req, res });
+      res.locals.data = {
+        ...response,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 }
