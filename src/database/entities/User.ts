@@ -47,6 +47,9 @@ export class User extends AppBaseEntity {
   @Column()
   hashPassword: string;
 
+  @Column({ nullable: true })
+  phoneNumber: string;
+
   @Column({
     type: "enum",
     enum: UserStatus,

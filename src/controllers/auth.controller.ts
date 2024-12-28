@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import Controller from "../decorators/controller";
-import { Get, Post } from "../decorators/handlers";
+import { Delete, Get, Post, Put } from "../decorators/handlers";
 import { NotFoundError } from "../utils/errors";
 import { User } from "../database/entities/User";
 import { generateUniqueString } from "../utils";
@@ -182,6 +182,70 @@ export default class AuthController {
       const response = await AuthRepository.getMe({ req, res });
       res.locals.message = "Get user information successfully.";
       res.locals.data = response.user;
+      next();
+    } catch (error) {
+      next(error);
+    }
+    next();
+  }
+  @Put("/me")
+  public async updateMe(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await AuthRepository.updateMe({ req, res });
+      res.locals.message = "Update user information successfully.";
+      res.locals.data = response.user;
+      next();
+    } catch (error) {
+      next(error);
+    }
+    next();
+  }
+  @Post("/addresses")
+  public async addAddress(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await AuthRepository.addAddress({ req, res });
+      res.locals.message = "Add address successfully.";
+      res.locals.data = response;
+      next();
+    } catch (error) {
+      next(error);
+    }
+    next();
+  }
+  @Put("/addresses/:id")
+  public async updateAddress(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await AuthRepository.updateAddress({ req, res });
+      res.locals.message = "Update address successfully.";
+      res.locals.data = response;
+      next();
+    } catch (error) {
+      next(error);
+    }
+    next();
+  }
+  @Delete("/addresses/:id")
+  public async deleteAddress(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await AuthRepository.deleteAddress({ req, res });
+      res.locals.message = "Delete address successfully.";
+      res.locals.data = response;
       next();
     } catch (error) {
       next(error);

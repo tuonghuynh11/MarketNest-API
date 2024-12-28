@@ -25,6 +25,7 @@ import { compareSync } from "bcryptjs";
 import { verify } from "jsonwebtoken";
 import { Shop } from "../entities/Shop";
 import ShopRepository from "./shop.repository";
+import Address from "../entities/Address";
 
 export default class AuthRepository {
   static getRoleByUser = async ({ dataSource, userId }: any) => {
@@ -530,8 +531,13 @@ export default class AuthRepository {
     const userRepository = dataSource.getRepository(User);
     const shopRepository = dataSource.getRepository(Shop);
 
-    const user: User | null = await userRepository.findOneBy({
-      id: session.userId,
+    const user: User | null = await userRepository.findOne({
+      relations: {
+        addresses: true,
+      },
+      where: {
+        id: session.userId,
+      },
     });
     if (!user) {
       throw new NotFoundError("User account is not found.");
@@ -548,6 +554,170 @@ export default class AuthRepository {
         ...omit(user, ["hashPassword", "resetToken", "activeToken"]),
         shop,
       },
+    };
+  };
+  static updateMe = async ({ req, res }: { req: Request; res: Response }) => {
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    const { username, email, displayName, phoneNumber, avatar } = req.body;
+    verify(session.accessToken, config.jwtAccessKey);
+    const userRepository = dataSource.getRepository(User);
+
+    const user: User | null = await userRepository.findOne({
+      relations: {
+        addresses: true,
+      },
+      where: {
+        id: session.userId,
+      },
+    });
+    if (!user) {
+      throw new NotFoundError("User account is not found.");
+    }
+
+    const existEmail = await userRepository.findOneBy({
+      email,
+    });
+    if (existEmail && existEmail.id !== user.id) {
+      throw new BadRequestError("The email already exists.");
+    }
+
+    const existUserName = await userRepository.findOneBy({
+      username,
+    });
+    if (existUserName && existUserName.id !== user.id) {
+      throw new BadRequestError("The username already exists.");
+    }
+
+    userRepository.merge(user, {
+      username,
+      email,
+      displayName,
+      phoneNumber,
+      avatar,
+    });
+    await userRepository.save(user);
+    return {
+      user: {
+        ...omit(user, ["hashPassword", "resetToken", "activeToken"]),
+      },
+    };
+  };
+  static addAddress = async ({ req, res }: { req: Request; res: Response }) => {
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    const { street, state, city, country, postalCode } = req.body;
+    verify(session.accessToken, config.jwtAccessKey);
+    const userRepository = dataSource.getRepository(User);
+    const addressRepository = dataSource.getRepository(Address);
+
+    const user: User | null = await userRepository.findOne({
+      relations: {
+        addresses: true,
+      },
+      where: {
+        id: session.userId,
+      },
+    });
+    if (!user) {
+      throw new NotFoundError("User account is not found.");
+    }
+
+    const address = addressRepository.create({
+      state,
+      street,
+      city,
+      country,
+      postalCode,
+      user,
+    });
+    await addressRepository.save(address);
+
+    return {
+      ...omit(address, ["user"]),
+    };
+  };
+  static updateAddress = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    const { street, state, city, country, postalCode } = req.body;
+    const { id } = req.params;
+    verify(session.accessToken, config.jwtAccessKey);
+    const addressRepository = dataSource.getRepository(Address);
+
+    const address: Address | null = await addressRepository.findOne({
+      relations: {
+        user: true,
+      },
+      where: {
+        id,
+      },
+    });
+    if (!address) {
+      throw new NotFoundError("Address is not found.");
+    }
+
+    if (address.user.id !== session.userId) {
+      throw new ForbiddenError(
+        "You do not have permission to perform this action."
+      );
+    }
+
+    addressRepository.merge(address, {
+      state,
+      street,
+      city,
+      country,
+      postalCode,
+    });
+    await addressRepository.save(address);
+
+    return {
+      ...omit(address, ["user"]),
+    };
+  };
+  static deleteAddress = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    const { street, state, city, country, postalCode } = req.body;
+    const { id } = req.params;
+    verify(session.accessToken, config.jwtAccessKey);
+    const addressRepository = dataSource.getRepository(Address);
+
+    const address: Address | null = await addressRepository.findOne({
+      relations: {
+        user: true,
+      },
+      where: {
+        id,
+      },
+    });
+    if (!address) {
+      throw new NotFoundError("Address is not found.");
+    }
+
+    if (address.user.id !== session.userId) {
+      throw new ForbiddenError(
+        "You do not have permission to perform this action."
+      );
+    }
+
+    await addressRepository.remove(address);
+
+    return {
+      ...omit(address, ["user"]),
     };
   };
 }
