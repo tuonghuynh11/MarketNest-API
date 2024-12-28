@@ -606,7 +606,8 @@ export default class AuthRepository {
   static addAddress = async ({ req, res }: { req: Request; res: Response }) => {
     const { dataSource } = req.app.locals;
     const { session } = res.locals;
-    const { street, state, city, country, postalCode } = req.body;
+    const { street, state, city, country, postalCode, phoneNumber, fullName } =
+      req.body;
     verify(session.accessToken, config.jwtAccessKey);
     const userRepository = dataSource.getRepository(User);
     const addressRepository = dataSource.getRepository(Address);
@@ -629,6 +630,8 @@ export default class AuthRepository {
       city,
       country,
       postalCode,
+      phoneNumber,
+      fullName,
       user,
     });
     await addressRepository.save(address);
@@ -646,7 +649,8 @@ export default class AuthRepository {
   }) => {
     const { dataSource } = req.app.locals;
     const { session } = res.locals;
-    const { street, state, city, country, postalCode } = req.body;
+    const { street, state, city, country, postalCode, phoneNumber, fullName } =
+      req.body;
     const { id } = req.params;
     verify(session.accessToken, config.jwtAccessKey);
     const addressRepository = dataSource.getRepository(Address);
@@ -675,6 +679,8 @@ export default class AuthRepository {
       city,
       country,
       postalCode,
+      phoneNumber,
+      fullName,
     });
     await addressRepository.save(address);
 
@@ -691,7 +697,6 @@ export default class AuthRepository {
   }) => {
     const { dataSource } = req.app.locals;
     const { session } = res.locals;
-    const { street, state, city, country, postalCode } = req.body;
     const { id } = req.params;
     verify(session.accessToken, config.jwtAccessKey);
     const addressRepository = dataSource.getRepository(Address);

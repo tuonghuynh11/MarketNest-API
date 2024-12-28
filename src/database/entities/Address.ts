@@ -35,6 +35,12 @@ export default class Address {
   @Column({ nullable: true })
   postalCode?: string;
 
+  @Column({ nullable: true })
+  phoneNumber?: string;
+
+  @Column({ nullable: true })
+  fullName?: string;
+
   @OneToMany(() => Order, (order) => order.paymentMethod)
   orders: Order[];
 }
