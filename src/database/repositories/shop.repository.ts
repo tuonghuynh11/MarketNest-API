@@ -15,7 +15,8 @@ import { omit } from "../../utils";
 import { Product } from "../entities/Product";
 import { User } from "../entities/User";
 import { Role } from "../entities/Role";
-
+import { sendMail } from "../../utils/email";
+import config from "../../configuration";
 export default class ShopRepository {
   static getAll = async ({ req, res }: { req: Request; res: Response }) => {
     const { dataSource } = req.app.locals;
@@ -368,7 +369,7 @@ export default class ShopRepository {
     const { id } = req.params;
     const { status } = req.body;
 
-    const { dataSource } = req.app.locals;
+    const { dataSource, nodeMailer } = req.app.locals;
     const { session } = res.locals;
     const shopRepository = dataSource.getRepository(Shop);
     const userRepository = dataSource.getRepository(User);
@@ -396,8 +397,24 @@ export default class ShopRepository {
         { id: shop.owner.id },
         { role: shopkeeperRole! }
       );
+      const urlShopkeeper = `${config.shopkeeperSite}`;
+      console.log("urlShopkeeper", urlShopkeeper);
+      await sendMail({
+        nodeMailer,
+        emails: shop.owner?.email,
+        template: "ActiveShopkeeperAccount",
+        data: {
+          subject: "Welcome to MarketNest – Your Seller Account is Live!",
+          email: shop.owner?.email,
+          displayName: shop.owner?.username,
+          urlShopkeeper,
+          contactEmail: "",
+          websiteUrl: "",
+          logoUrl:
+            "https://marketplace.canva.com/EAGHpqF4xz0/1/0/1600w/canva-purple-%26-yellow-illustrative-e-commerce-online-shop-logo-PzcxxJfRApQ.jpg",
+        },
+      });
     }
-
     await shopRepository.save(shop);
     return shop;
   };
