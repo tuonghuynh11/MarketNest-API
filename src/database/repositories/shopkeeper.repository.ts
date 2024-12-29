@@ -494,9 +494,14 @@ export default class ShopkeeperRepository {
     const categoryRepository = dataSource.getRepository(ProductCategory);
     const shopRepository = dataSource.getRepository(Shop);
 
-    const shop = await shopRepository.findOneBy({
-      owner: {
-        id: session.userId,
+    const shop = await shopRepository.findOne({
+      relations: {
+        categories: true,
+      },
+      where: {
+        owner: {
+          id: session.userId,
+        },
       },
     });
 
@@ -504,22 +509,22 @@ export default class ShopkeeperRepository {
       throw new Error("Shop not found");
     }
 
-    const categories = await categoryRepository.find({
-      relations: ["products", "products.shop"],
-      where: {
-        products: {
-          shop: {
-            id: shop.id,
-          },
-        },
-      },
-    });
+    // const categories = await categoryRepository.find({
+    //   relations: ["products", "products.shop"],
+    //   where: {
+    //     products: {
+    //       shop: {
+    //         id: shop.id,
+    //       },
+    //     },
+    //   },
+    // });
 
     return {
       ...shop,
-      categories: categories.map((category: ProductCategory) => ({
-        ...omit(category, ["products"]),
-      })),
+      // categories: categories.map((category: ProductCategory) => ({
+      //   ...omit(category, ["products"]),
+      // })),
     };
   };
   static updateMe = async ({ req, res }: { req: Request; res: Response }) => {

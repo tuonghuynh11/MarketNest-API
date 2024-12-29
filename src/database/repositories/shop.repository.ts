@@ -29,6 +29,7 @@ export default class ShopRepository {
 
     let criteria: FindManyOptions<Shop> = {
       relations: {
+        categories: true,
         owner: true,
       },
       skip:
@@ -86,36 +87,37 @@ export default class ShopRepository {
 
     const [shops, count] = await shopRepository.findAndCount(criteria);
 
-    const shopCategories = await Promise.all(
-      shops.map((shop: Shop) => {
-        return categoryRepository.find({
-          relations: ["products", "products.shop"],
-          where: {
-            products: {
-              shop: {
-                id: shop.id,
-              },
-            },
-          },
-        });
-      })
-    );
+    // const shopCategories = await Promise.all(
+    //   shops.map((shop: Shop) => {
+    //     return categoryRepository.find({
+    //       relations: ["products", "products.shop"],
+    //       where: {
+    //         products: {
+    //           shop: {
+    //             id: shop.id,
+    //           },
+    //         },
+    //       },
+    //     });
+    //   })
+    // );
 
     return {
       pageSize: pageIndex && pageSize ? Number(pageSize) : null,
       pageIndex: pageIndex && pageSize ? Number(pageIndex) : null,
       count,
       totalPages: pageSize ? Math.ceil(count / Number(pageSize)) : 1,
-      shops: shops.map((shop: Shop, index: number) => {
-        return {
-          ...shop,
-          categories: shopCategories[index].map(
-            (category: ProductCategory) => ({
-              ...omit(category, ["products"]),
-            })
-          ),
-        };
-      }),
+      // shops: shops.map((shop: Shop, index: number) => {
+      //   return {
+      //     ...shop,
+      //     categories: shopCategories[index].map(
+      //       (category: ProductCategory) => ({
+      //         ...omit(category, ["products"]),
+      //       })
+      //     ),
+      //   };
+      // }),
+      shops,
     };
   };
 
@@ -128,6 +130,7 @@ export default class ShopRepository {
     const shop = await shopRepository.findOne({
       relations: {
         products: true,
+        categories: true,
       },
       where: { id },
     });
@@ -136,22 +139,22 @@ export default class ShopRepository {
       throw new NotFoundError("Shop not found.");
     }
 
-    const categories = await categoryRepository.find({
-      relations: ["products", "products.shop"],
-      where: {
-        products: {
-          shop: {
-            id: shop.id,
-          },
-        },
-      },
-    });
+    // const categories = await categoryRepository.find({
+    //   relations: ["products", "products.shop"],
+    //   where: {
+    //     products: {
+    //       shop: {
+    //         id: shop.id,
+    //       },
+    //     },
+    //   },
+    // });
 
     return {
       ...omit(shop, ["products"]),
-      categories: categories.map((category: ProductCategory) => ({
-        ...omit(category, ["products"]),
-      })),
+      // categories: categories.map((category: ProductCategory) => ({
+      //   ...omit(category, ["products"]),
+      // })),
     };
   };
   static getShopProduct = async ({
