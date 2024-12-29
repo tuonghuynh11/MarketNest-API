@@ -3,7 +3,7 @@ import Order from "../entities/Order";
 import { OrderStatus } from "../../utils/enums";
 import { ProfitCalculation } from "../../utils/interfaces";
 import { Product, ProductStatus } from "../entities/Product";
-import { Between, FindManyOptions, ILike, Not } from "typeorm";
+import { Between, FindManyOptions, ILike, In, Not } from "typeorm";
 import OrderDetail from "../entities/OrderDetail";
 import { Shop } from "../entities/Shop";
 import { omit } from "../../utils";
@@ -521,5 +521,56 @@ export default class ShopkeeperRepository {
         ...omit(category, ["products"]),
       })),
     };
+  };
+  static updateMe = async ({ req, res }: { req: Request; res: Response }) => {
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    verify(session.accessToken, config.jwtAccessKey);
+    const categoryRepository = dataSource.getRepository(ProductCategory);
+    const shopRepository = dataSource.getRepository(Shop);
+    const {
+      name,
+      description,
+      image,
+      city,
+      state,
+      country,
+      address,
+      categories,
+    } = req.body;
+
+    const shop = await shopRepository.findOneBy({
+      owner: {
+        id: session.userId,
+      },
+    });
+
+    if (!shop) {
+      throw new Error("Shop not found");
+    }
+
+    const categoryList = await categoryRepository.find({
+      where: {
+        id: In(categories),
+      },
+    });
+
+    if (categoryList.length !== categories.length) {
+      throw new Error("Some categories not found");
+    }
+    shop.categories = [...categoryList];
+    shopRepository.merge(shop, {
+      name,
+      description,
+      image,
+      city,
+      state,
+      country,
+      address,
+    });
+
+    await shopRepository.save(shop);
+    const result = await this.getMe({ req, res });
+    return result;
   };
 }

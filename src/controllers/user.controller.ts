@@ -48,6 +48,22 @@ export default class UserController {
       next(error);
     }
   }
+  @Post("/register-to-sell")
+  @Authorize([SystemRole.User])
+  public async registerToSell(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await UserRepository.registerToSell({ req, res });
+      res.locals.data = response;
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
   @Get("/")
   @Authorize([SystemRole.Admin])
   public async index(

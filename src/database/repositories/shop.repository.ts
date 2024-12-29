@@ -9,10 +9,12 @@ import {
 import { NotFoundError } from "../../utils/errors";
 import { Shop } from "../entities/Shop";
 import Discount from "../entities/Discount";
-import { ShopStatus } from "../../utils/enums";
+import { ShopStatus, SystemRole } from "../../utils/enums";
 import ProductCategory from "../entities/ProductCategory";
 import { omit } from "../../utils";
 import { Product } from "../entities/Product";
+import { User } from "../entities/User";
+import { Role } from "../entities/Role";
 
 export default class ShopRepository {
   static getAll = async ({ req, res }: { req: Request; res: Response }) => {
@@ -369,7 +371,12 @@ export default class ShopRepository {
     const { dataSource } = req.app.locals;
     const { session } = res.locals;
     const shopRepository = dataSource.getRepository(Shop);
+    const userRepository = dataSource.getRepository(User);
+    const roleRepository = dataSource.getRepository(Role);
     const shop = await shopRepository.findOne({
+      relations: {
+        owner: true,
+      },
       where: { id },
     });
 
@@ -380,6 +387,16 @@ export default class ShopRepository {
     shopRepository.merge(shop, {
       status,
     });
+
+    if (status === ShopStatus.ACTIVE) {
+      const shopkeeperRole = await roleRepository.findOne({
+        where: { name: SystemRole.Shopkeeper },
+      });
+      await userRepository.update(
+        { id: shop.owner.id },
+        { role: shopkeeperRole! }
+      );
+    }
 
     await shopRepository.save(shop);
     return shop;

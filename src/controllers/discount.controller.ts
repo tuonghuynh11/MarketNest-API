@@ -63,6 +63,7 @@ export default class DiscountController {
       next(error);
     }
   }
+
   @Get("/:id")
   public async getById(
     req: Request,

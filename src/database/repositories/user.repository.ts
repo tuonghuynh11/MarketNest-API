@@ -20,10 +20,12 @@ import config from "../../configuration";
 import { sendMail } from "../../utils/email";
 import AppReport from "../entities/AppReport";
 import Order from "../entities/Order";
-import { OrderStatus } from "../../utils/enums";
+import { OrderStatus, ShopStatus } from "../../utils/enums";
 import ProductCategory from "../entities/ProductCategory";
 import ProductImage from "../entities/ProductImage";
 import OrderDetail from "../entities/OrderDetail";
+import { verify } from "jsonwebtoken";
+import { Shop } from "../entities/Shop";
 
 export default class UserRepository {
   static getAllUses = async (req: Request) => {
@@ -156,6 +158,66 @@ export default class UserRepository {
     await appReportRepository.save(newAppReport);
 
     return newAppReport;
+  };
+  static registerToSell = async ({
+    req,
+    res,
+  }: {
+    req: Request;
+    res: Response;
+  }) => {
+    const { dataSource } = req.app.locals;
+    const { session } = res.locals;
+    verify(session.accessToken, config.jwtAccessKey);
+    const categoryRepository = dataSource.getRepository(ProductCategory);
+    const shopRepository = dataSource.getRepository(Shop);
+    const {
+      name,
+      description,
+      image,
+      city,
+      state,
+      country,
+      address,
+      categories,
+    } = req.body;
+
+    const categoryList = await categoryRepository.find({
+      where: {
+        id: In(categories),
+      },
+    });
+
+    if (categoryList.length !== categories.length) {
+      throw new Error("Some categories not found");
+    }
+
+    const existedShopName = await shopRepository.find({
+      where: {
+        name,
+      },
+    });
+    if (existedShopName.length > 0) {
+      throw new NotAcceptableError("Shop name already in use.");
+    }
+    const newShop = shopRepository.create({
+      name,
+      createdBy: session.userId,
+      description,
+      image,
+      city,
+      state,
+      country,
+      address,
+      status: ShopStatus.PENDING,
+      owner: {
+        id: session.userId,
+      },
+    });
+    newShop.categories = [...categoryList];
+
+    await shopRepository.save(newShop);
+    return newShop;
   };
   static getMyOrder = async ({ req, res }: { req: Request; res: Response }) => {
     const {

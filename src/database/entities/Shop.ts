@@ -1,4 +1,12 @@
-import { Column, Entity, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  OneToOne,
+} from "typeorm";
 import { AppBaseEntity } from "./AppBase";
 import { User } from "./User";
 import { Product } from "./Product";
@@ -8,6 +16,7 @@ import { ShopStatus } from "../../utils/enums";
 import Discount from "./Discount";
 import Order from "./Order";
 import AppReport from "./AppReport";
+import ProductCategory from "./ProductCategory";
 
 @Entity("shops")
 export class Shop extends AppBaseEntity {
@@ -59,4 +68,12 @@ export class Shop extends AppBaseEntity {
 
   @Column({ default: 0, type: "float" })
   rate: number;
+
+  @ManyToMany(() => ProductCategory)
+  @JoinTable({
+    name: "shop_categories",
+    joinColumn: { name: "shop_id" },
+    inverseJoinColumn: { name: "category_id" },
+  })
+  categories: ProductCategory[];
 }

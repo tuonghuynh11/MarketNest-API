@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import Authenticate from "../decorators/authenticate";
 import Authorize from "../decorators/authorize";
 import Controller from "../decorators/controller";
-import { Get } from "../decorators/handlers";
+import { Get, Put } from "../decorators/handlers";
 import { SystemRole } from "../utils/enums";
 import ShopkeeperRepository from "../database/repositories/shopkeeper.repository";
 import OrderRepository from "../database/repositories/order.repository";
@@ -58,6 +58,22 @@ export default class ShopkeeperController {
     try {
       const response = await ShopkeeperRepository.getMe({ req, res });
       res.locals.message = "Get shop information successfully.";
+      res.locals.data = response;
+      next();
+    } catch (error) {
+      next(error);
+    }
+    next();
+  }
+  @Put("/me")
+  public async updateMe(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const response = await ShopkeeperRepository.updateMe({ req, res });
+      res.locals.message = "Update shop information successfully.";
       res.locals.data = response;
       next();
     } catch (error) {
