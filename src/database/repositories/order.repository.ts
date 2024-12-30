@@ -142,6 +142,7 @@ export default class OrderRepository {
         shop: {
           owner: true,
         },
+        user: true,
       },
       where: conditions,
     });
@@ -156,7 +157,23 @@ export default class OrderRepository {
       count,
       totalPages: Math.ceil(count / Number(pageSize)),
       orders: orders.map((order: Order) => {
-        return { ...omit(order, ["shop"]) };
+        return {
+          ...omit(order, ["shop"]),
+          user: {
+            ...omit(order.user, [
+              "hashPassword",
+              "role",
+              "createdAt",
+              "updatedAt",
+              "createdBy",
+              "updatedBy",
+              "deletedAt",
+              "deletedBy",
+              "activeToken",
+              "resetToken",
+            ]),
+          },
+        };
       }),
     };
   };
