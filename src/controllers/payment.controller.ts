@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import Authenticate from "../decorators/authenticate";
 import Authorize from "../decorators/authorize";
 import Controller from "../decorators/controller";
 import { Post } from "../decorators/handlers";
@@ -10,8 +9,10 @@ import { PaymentStatus } from "../utils/enums";
 import configuration from "../configuration";
 import { createNotification } from "../database/repositories/notification.repository";
 import { ENotificationType } from "../database/entities/Notification";
+
+import { HmacSHA256 } from "crypto-js";
 @Controller("/payment")
-@Authenticate()
+// @Authenticate()
 export default class PaymentController {
   @Post("/momo")
   @Authorize()
@@ -182,10 +183,7 @@ export default class PaymentController {
       let dataStr = req.body.data;
       let reqMac = req.body.mac;
 
-      let mac = CryptoJS.HmacSHA256(
-        dataStr,
-        configuration.zalo_key_2
-      ).toString();
+      let mac = HmacSHA256(dataStr, configuration.zalo_key_2).toString();
       console.log("mac =", mac);
 
       // kiểm tra callback hợp lệ (đến từ ZaloPay server)
