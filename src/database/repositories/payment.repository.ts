@@ -37,20 +37,21 @@ export default class PaymentRepository {
     const { dataSource } = req.app.locals;
     const orderRepository = dataSource.getRepository(Order);
 
-    // const order = await orderRepository.findOneBy({
-    //   id: orderId,
-    // });
+    const order = await orderRepository.findOneBy({
+      id: orderId,
+    });
 
-    // if (!order) {
-    //   throw new Error("Order not found");
-    // }
+    if (!order) {
+      throw new Error("Order not found");
+    }
 
     const { orderPaymentId, result } = await PaymentService.payByZaloPay({
+      orderId,
       orderAmount: amount,
     });
-    // order.orderPaymentId = orderPaymentId;
+    order.orderPaymentId = orderPaymentId;
 
-    // await orderRepository.save(order);
+    await orderRepository.save(order);
     return result;
   };
 

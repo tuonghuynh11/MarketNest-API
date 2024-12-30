@@ -134,7 +134,13 @@ export default class PaymentService {
     return result.data;
   };
 
-  static payByZaloPay = async ({ orderAmount }: { orderAmount: number }) => {
+  static payByZaloPay = async ({
+    orderId,
+    orderAmount,
+  }: {
+    orderId: string;
+    orderAmount: number;
+  }) => {
     // APP INFO, STK TEST: 4111 1111 1111 1111
     const config = {
       app_id: configuration.zalo_app_id,
