@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Product, ProductStatus } from "../entities/Product";
 import {
+  And,
   FindManyOptions,
   ILike,
   In,
@@ -48,7 +49,9 @@ export default class ProductRepository {
           description: true,
         },
         images: {
+          id: true,
           imageUrl: true,
+          order: true,
         },
       },
       where: {
@@ -114,9 +117,10 @@ export default class ProductRepository {
         ...criteria,
         where: {
           ...criteria.where,
-          price:
-            MoreThanOrEqual(Number(minPrice)) &&
-            LessThanOrEqual(Number(maxPrice)),
+          price: And(
+            MoreThanOrEqual(Number(minPrice)),
+            LessThanOrEqual(Number(maxPrice))
+          ),
         },
       };
     } else if (minPrice && !maxPrice) {
@@ -162,7 +166,9 @@ export default class ProductRepository {
       products: products.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
-          images: product.images.map((image) => image.imageUrl),
+          images: product.images
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((image: any) => image.imageUrl),
         };
       }),
       categories: Array.from(categories.values()),
@@ -205,6 +211,7 @@ export default class ProductRepository {
           description: true,
         },
         images: {
+          order: true,
           imageUrl: true,
         },
       },
@@ -287,7 +294,9 @@ export default class ProductRepository {
       products: products.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
-          images: product.images.map((image) => image.imageUrl),
+          images: product.images
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((image) => image.imageUrl),
         };
       }),
     };
@@ -324,6 +333,7 @@ export default class ProductRepository {
           description: true,
         },
         images: {
+          order: true,
           imageUrl: true,
         },
       },
@@ -348,7 +358,9 @@ export default class ProductRepository {
       related_products: relatedProducts.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
-          images: product.images.map((image) => image.imageUrl),
+          images: product.images
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((image) => image.imageUrl),
         };
       }),
     };
@@ -369,6 +381,7 @@ export default class ProductRepository {
     }
     return {
       ...product,
+      images: product.images.sort((a: any, b: any) => a.order - b.order),
       ratings: product.ratings.length,
     };
   };
@@ -407,10 +420,11 @@ export default class ProductRepository {
     await productRepository.save(product);
 
     if (imageUrls && imageUrls.length > 0) {
-      const images = imageUrls.map((imageUrl: string) => {
+      const images = imageUrls.map((imageUrl: string, index: number) => {
         const image = imageRepository.create({
           imageUrl,
           product,
+          order: index,
         });
         return image;
       });
@@ -497,22 +511,36 @@ export default class ProductRepository {
         const existingImages = await imageRepository.find({
           where: { product: { id } },
         });
-        const newImages = imageUrls.map((imageUrl: string) => {
+        const newImages = imageUrls.map((imageUrl: string, index: number) => {
           const image = existingImages.find(
             (img: ProductImage) => img.imageUrl === imageUrl
           );
-          if (image) return image;
-          return imageRepository.create({ imageUrl, product });
+          if (image) {
+            image.order = index;
+            return image;
+          }
+          return imageRepository.create({ imageUrl, product, order: index });
         });
 
         await imageRepository.save(newImages);
       }
     }
-
+    const images = await imageRepository.find({
+      where: { product: { id } },
+      order: {
+        order: "ASC",
+      },
+      select: {
+        id: true,
+        imageUrl: true,
+        order: true,
+      },
+    });
     return {
       product: {
         ...product,
         categories: product.categories,
+        images,
       },
     };
   };

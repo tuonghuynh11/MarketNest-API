@@ -20,4 +20,7 @@ export default class ProductImage {
 
   @Column()
   imageUrl: string;
+
+  @Column({ default: 0 })
+  order: number;
 }

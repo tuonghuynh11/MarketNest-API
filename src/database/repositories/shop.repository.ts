@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import {
+  And,
   FindManyOptions,
   ILike,
   In,
@@ -196,6 +197,8 @@ export default class ShopRepository {
           description: true,
         },
         images: {
+          id: true,
+          order: true,
           imageUrl: true,
         },
         shop: {
@@ -256,9 +259,10 @@ export default class ShopRepository {
         ...criteria,
         where: {
           ...criteria.where,
-          price:
-            MoreThanOrEqual(Number(minPrice)) &&
-            LessThanOrEqual(Number(maxPrice)),
+          price: And(
+            MoreThanOrEqual(Number(minPrice)),
+            LessThanOrEqual(Number(maxPrice))
+          ),
         },
       };
     } else if (minPrice && !maxPrice) {
@@ -304,7 +308,9 @@ export default class ShopRepository {
       products: products.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
-          images: product.images.map((image) => image.imageUrl),
+          images: product.images
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((image) => image.imageUrl),
         };
       }),
       categories: Array.from(categories.values()),

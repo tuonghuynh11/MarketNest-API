@@ -38,6 +38,7 @@ export default class AdminRepository {
         },
         images: {
           imageUrl: true,
+          order: true,
         },
       },
     };
@@ -79,7 +80,9 @@ export default class AdminRepository {
       products: products.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
-          images: product.images.map((image) => image.imageUrl),
+          images: product.images
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((image) => image.imageUrl),
         };
       }),
     };

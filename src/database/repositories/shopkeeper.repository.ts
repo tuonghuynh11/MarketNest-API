@@ -378,6 +378,8 @@ export default class ShopkeeperRepository {
           description: true,
         },
         images: {
+          id: true,
+          order: true,
           imageUrl: true,
         },
       },
@@ -401,7 +403,9 @@ export default class ShopkeeperRepository {
       products: products.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
-          images: product.images.map((image) => image.imageUrl),
+          images: product.images
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((image) => image.imageUrl),
         };
       }),
     };
@@ -468,6 +472,8 @@ export default class ShopkeeperRepository {
           description: true,
         },
         images: {
+          id: true,
+          order: true,
           imageUrl: true,
         },
       },
@@ -481,7 +487,9 @@ export default class ShopkeeperRepository {
       products: products.map((product: Product) => {
         return {
           ...omit(product, ["images"]),
-          images: product.images.map((image) => image.imageUrl),
+          images: product.images
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((image) => image.imageUrl),
         };
       }),
     };
