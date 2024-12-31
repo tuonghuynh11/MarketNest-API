@@ -91,6 +91,13 @@ class Config implements ConfigValues {
   zalo_endpoint = process.env.ZALO_END_POINT || "";
   zalo_redirect_url = process.env.ZALO_REDIRECT_URL || "";
   zalo_app_user = process.env.ZALO_APP_USER || "";
+
+  //Cloudinary
+  cloud_name = process.env.CLOUD_NAME as string;
+  api_key = process.env.API_KEY as string;
+  api_secret = process.env.API_SECRET as string;
+
+  admin_mail = process.env.ADMIN_MAIL as string;
 }
 
 export default new Config();

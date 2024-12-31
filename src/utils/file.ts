@@ -165,3 +165,8 @@ export const compressImageWithFFmpeg = async (
     throw new Error(`Error executing FFmpeg: ${error.message}`);
   }
 };
+export const deleteFolder = (dir: string) => {
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true });
+  }
+};
