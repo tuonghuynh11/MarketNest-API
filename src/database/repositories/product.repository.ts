@@ -505,25 +505,35 @@ export default class ProductRepository {
     await productRepository.save(product);
 
     if (imageUrls) {
-      if (imageUrls.length === 0) {
-        await imageRepository.delete({ product: { id } });
-      } else {
-        const existingImages = await imageRepository.find({
-          where: { product: { id } },
-        });
-        const newImages = imageUrls.map((imageUrl: string, index: number) => {
-          const image = existingImages.find(
-            (img: ProductImage) => img.imageUrl === imageUrl
-          );
-          if (image) {
-            image.order = index;
-            return image;
-          }
-          return imageRepository.create({ imageUrl, product, order: index });
-        });
+      // if (imageUrls.length === 0) {
+      //   await imageRepository.delete({ product: { id } });
+      // } else {
+      //   const existingImages = await imageRepository.find({
+      //     where: { product: { id } },
+      //   });
+      //   const newImages = imageUrls.map((imageUrl: string, index: number) => {
+      //     const image = existingImages.find(
+      //       (img: ProductImage) => img.imageUrl === imageUrl
+      //     );
+      //     if (image) {
+      //       image.order = index;
+      //       return image;
+      //     }
+      //     return imageRepository.create({ imageUrl, product, order: index });
+      //   });
 
-        await imageRepository.save(newImages);
-      }
+      //   await imageRepository.save(newImages);
+      // }
+      await imageRepository.delete({ product: { id } });
+      const images = imageUrls.map((imageUrl: string, index: number) => {
+        const image = imageRepository.create({
+          imageUrl,
+          product,
+          order: index,
+        });
+        return image;
+      });
+      await imageRepository.save(images);
     }
     const images = await imageRepository.find({
       where: { product: { id } },
