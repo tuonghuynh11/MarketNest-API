@@ -275,6 +275,10 @@ export default class UserRepository {
           "totalAmount",
           "orderStatus",
           "refundStatus",
+          "discount",
+          "paymentStatus",
+          "shippingMethod",
+          "paymentMethod",
         ]),
         orderDetails: order.orderDetails.map((orderDetail: any) => {
           return {
