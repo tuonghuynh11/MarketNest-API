@@ -48,6 +48,7 @@ class Application {
           configuration.clientSite,
           configuration.adminSite,
           configuration.shopkeeperSite,
+          "http://localhost:5173",
         ],
         credentials: true,
       })
