@@ -3,7 +3,7 @@ import Order from "../entities/Order";
 import { NotAcceptableError } from "../../utils/errors";
 import { omit } from "../../utils";
 import OrderDetail from "../entities/OrderDetail";
-import { OrderStatus, SystemRole } from "../../utils/enums";
+import { OrderStatus, PaymentStatus, SystemRole } from "../../utils/enums";
 import PaymentMethod from "../entities/PaymentMethod";
 import ShippingMethod from "../entities/ShippingMethod";
 import Address from "../entities/Address";
@@ -281,6 +281,7 @@ export default class OrderRepository {
       shippingFee,
       totalAmount,
       orderStatus: OrderStatus.WAITING_VERIFY,
+      paymentStatus: PaymentStatus.PAID,
     });
 
     const orderDetailsEntities = orderDetails.map((orderDetail: any) => {
